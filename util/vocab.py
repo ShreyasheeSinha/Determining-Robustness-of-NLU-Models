@@ -35,8 +35,11 @@ class Vocabulary:
     def get_word_count(self, word):
         return self.word2count[word]
 
-    def get_indices(self):
+    def get_word2index(self):
         return self.word2index
 
-    def get_words(self):
+    def get_index2word(self):
         return self.index2word
+    
+    def get_vocab_size(self):
+        return self.n_words
