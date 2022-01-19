@@ -29,20 +29,34 @@ def load_model(path, model_name):
     checkpoint = torch.load(full_path)
     return checkpoint
 
-def save_vocab(path, vocab):
-    name = "vocab.obj"
+def save_vocab(path, vocab, model_name):
+    name = model_name + "_vocab.obj"
     full_path = os.path.join(path, name)
     with open(full_path, 'wb') as handle:
-        pickle.dump(vocab, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(vocab, handle)
 
-def load_vocab(path):
-    name = "vocab.obj"
+def load_vocab(path, model_name):
+    name = model_name + "_vocab.obj"
     full_path = os.path.join(path, name)
     with open(full_path, 'rb') as handle:
         vocab = pickle.load(handle)
     return vocab
 
+def save_model_config(path, model_name, options):
+    name = model_name + ".config"
+    full_path = os.path.join(path, name)
+    with open(full_path, 'wb') as handle:
+        pickle.dump(options, handle)
+
+def load_model_config(path, model_name):
+    name = model_name + ".config"
+    full_path = os.path.join(path, name)
+    with open(full_path, 'rb') as handle:
+        config = pickle.load(handle)
+    return config
+
 def create_embedding_matrix(embeddings_index, embedding_size, vocab):
+    print("Creating embeddings..")
     vocab_size = vocab.get_vocab_size()
     embedding_matrix = 1 * np.random.randn(vocab_size + 1, embedding_size)
     embedded_count = 0

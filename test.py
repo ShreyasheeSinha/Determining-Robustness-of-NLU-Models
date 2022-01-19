@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 import time
 from tqdm import tqdm
+import numpy as np
 
 class Tester:
 
@@ -18,7 +19,10 @@ class Tester:
         self.test_path = options['test_path']
         self.emb_path = options['emb_path']
         self.batch_size = options['batch_size']
-        self.vocab = model_utils.load_vocab(self.save_path)
+        self.seq_len = options['seq_len']
+        self.hidden_size = options['hidden_size']
+        self.stacked_layers = options['stacked_layers']
+        self.vocab = model_utils.load_vocab(self.save_path, self.model_name)
 
     def labels_to_indices(self, labels):
         label_dict = {'entailment': 2, 'contradiction': 0, 'neutral': 1}
@@ -26,29 +30,60 @@ class Tester:
         return label_indices
 
     def convert_to_indices(self, premises, hypotheses):
+        print("Coverting sentences to indexes..")
         premise_indices = []
+        premise_masks = []
         hypothesis_indices = []
+        hypothesis_masks = []
 
-        for premise in premises:
-            indices = [self.vocab.get_index(w) for w in word_tokenize(premise)]
+        for premise, hypothesis in tqdm(zip(premises, hypotheses), total=len(premises)):
+            indices = []
+            masks = []
+            premise_tokens = word_tokenize(premise.lower())
+            for i in range(self.seq_len):
+                if i >= len(premise_tokens):
+                    indices.append(0) # Append padding
+                    masks.append(0)
+                else:
+                    w = premise_tokens[i]
+                    if self.vocab.get_index(w):
+                        indices.append(self.vocab.get_index(w))
+                    else:
+                        indices.append(1) # UNK token index
+                    masks.append(1)
             premise_indices.append(indices)
-
-        for hypothesis in hypotheses:
-            indices = [self.vocab.get_index(w) for w in word_tokenize(hypothesis)]
+            premise_masks.append(masks)
+            
+            indices = []
+            masks = []
+            hypothesis_tokens = word_tokenize(hypothesis.lower())
+            for i in range(self.seq_len):
+                if i >= len(hypothesis_tokens):
+                    indices.append(0) # Append padding
+                    masks.append(0)
+                else:
+                    w = hypothesis_tokens[i]
+                    if self.vocab.get_index(w):
+                        indices.append(self.vocab.get_index(w))
+                    else:
+                        indices.append(1) # UNK token index
+                    masks.append(1)
             hypothesis_indices.append(indices)
+            hypothesis_masks.append(masks)
         
-        return premise_indices, hypothesis_indices
+        return premise_indices, premise_masks, hypothesis_indices, hypothesis_masks
 
     def create_test_data(self):
         val_df = load_utils.load_data(self.test_path)
+        val_df = val_df[val_df['gold_label'] != '-']
         premises = val_df['sentence1'].to_list()
         hypotheses = val_df['sentence2'].to_list()
         labels = val_df['gold_label'].to_list()
 
-        premise_indices, hypothesis_indices = self.convert_to_indices(premises, hypotheses)
+        premise_indices, premise_masks, hypothesis_indices, hypothesis_masks = self.convert_to_indices(premises, hypotheses)
         label_indices = self.labels_to_indices(labels)
 
-        test_data = DataSetLoader(premise_indices, hypothesis_indices, label_indices)
+        test_data = DataSetLoader(np.array(premise_indices), np.array(premise_masks), np.array(hypothesis_indices), np.array(hypothesis_masks), np.array(label_indices))
 
         test_loader = torch.utils.data.DataLoader(test_data, batch_size=self.batch_size)
 
@@ -73,13 +108,13 @@ class Tester:
         total_test_acc  = 0
         total_test_loss = 0
         with torch.no_grad():
-            for step, batch in enumerate(tqdm(test_data)):
-                premises = batch[0].to(self.device)
-                hypotheses = batch[1].to(self.device)
-                labels = batch[2].to(self.device)
+            for premises, premise_mask, hypotheses, hypothesis_mask, labels in tqdm(test_data):
+                premises = premises.to(self.device)
+                hypotheses = hypotheses.to(self.device)
+                labels = labels.to(self.device)
                 
                 model.zero_grad()
-                predictions = model(premises, hypotheses)
+                predictions = model(premises, premise_mask, hypotheses, hypothesis_mask)
 
                 loss = criterion(predictions, labels)
                 acc  = self.multi_acc(predictions, labels)
@@ -94,13 +129,14 @@ class Tester:
 
     def execute(self):
         total_t0 = time.time()
+        test_data = self.create_test_data()
+        
         model = self.create_model()
         criterion = nn.CrossEntropyLoss()
-        model_info = model_utils.load_model(self.save_path)
+        model_info = model_utils.load_model(self.save_path, self.model_name)
 
         model.load_state_dict(model_info['model_state_dict'])
 
-        test_data = self.create_test_data()
         test_acc, test_loss = self.test(test_data, model, criterion)
         print(f'test_loss: {test_loss:.4f} test_acc: {test_acc:.4f}')
 

@@ -5,7 +5,7 @@ using https://github.com/imran3180/pytorch-nli/blob/master/models/bilstm.py as a
 import torch
 import torch.nn as nn
 
-class BiLSTM(nn.module):
+class BiLSTM(nn.Module):
 
     def __init__(self, hidden_size, stacked_layers, weights_matrix, device, dropout=0.2):
         super(BiLSTM, self).__init__()
@@ -20,12 +20,12 @@ class BiLSTM(nn.module):
         self.embedding = nn.Embedding(num_embeddings, embedding_dim)
         self.embedding.weight.data.copy_(torch.from_numpy(weights_matrix))
 
-        self.lstm = nn.LSTM(self.hidden_size, self.hidden_size, self.num_layers, bidirectional = True, batch_first = True, dropout = dropout)
+        self.lstm = nn.LSTM(embedding_dim, self.hidden_size, self.num_layers, bidirectional = True, batch_first = True, dropout = dropout)
         
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(p = dropout)
 
-        self.lin1 = nn.Linear(self.hidden_size * self.directions * self.concat, self.hidden_size)
+        self.lin1 = nn.Linear(self.hidden_size * self.concat, self.hidden_size)
         self.lin2 = nn.Linear(self.hidden_size, self.hidden_size)
         self.lin3 = nn.Linear(self.hidden_size, 3)
 
@@ -43,20 +43,19 @@ class BiLSTM(nn.module):
             self.lin3
         )
 
-    def forward_once(self, sequence):
+    def forward_once(self, sequence, mask):
         batch_size = sequence.size(0)
-        sequence_lens = list(map(len, sequence))
-        padded_sequence = nn.utils.rnn.pad_sequence(sequence, batch_first=True)
-        h0 = torch.zeros(self.stacked_layers*2 if self.bidirectional else self.stacked_layers, batch_size, self.hidden_size).to(self.device) # 2 for bidirection 
-        c0 = torch.zeros(self.stacked_layers*2 if self.bidirectional else self.stacked_layers, batch_size, self.hidden_size).to(self.device)
-        embedded_sequence = self.embedding(padded_sequence)
+        sequence_lens = mask.int().sum(1)
+        h0 = torch.zeros(self.stacked_layers*2, batch_size, self.hidden_size).to(self.device) # 2 for bidirection 
+        c0 = torch.zeros(self.stacked_layers*2, batch_size, self.hidden_size).to(self.device)
+        embedded_sequence = self.embedding(sequence)
         packed_sequence = nn.utils.rnn.pack_padded_sequence(embedded_sequence, lengths=sequence_lens, batch_first=True, enforce_sorted=False)
         _, (hidden, _) = self.lstm(packed_sequence, (h0, c0))
         return hidden
 
-    def forward(self, premise, hypothesis):
-        premise = self.forward_once(premise)
-        hypothesis = self.forward_once(hypothesis)
+    def forward(self, premises, premise_mask, hypotheses, hypothesis_mask):
+        premise = self.forward_once(premises, premise_mask)
+        hypothesis = self.forward_once(hypotheses, hypothesis_mask)
 
         combined_outputs  = torch.cat((premise, hypothesis, torch.abs(premise - hypothesis), premise * hypothesis), dim=2)
 

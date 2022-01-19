@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.optim as optim
 import time
 from tqdm import tqdm
+import numpy as np
 
 class Trainer:
 
@@ -25,42 +26,73 @@ class Trainer:
         self.hidden_size = options['hidden_size']
         self.stacked_layers = options['stacked_layers']
         self.learning_rate = options['learning_rate']
+        self.seq_len = options['seq_len']
         self.vocab = None
 
     def build_vocab(self, premises, hypotheses):
         self.vocab = Vocabulary()
+        print("Building vocab..")
+        for premise, hypothesis in tqdm(zip(premises, hypotheses), total=len(premises)):
+            self.vocab.addSentence(premise.lower())
+            self.vocab.addSentence(hypothesis.lower())
 
-        for premise in premises:
-            self.vocab.addSentence(premise)
-        
-        for hypothesis in hypotheses:
-            self.vocab.addSentence(hypothesis)
-
-        print("Vocab size: " + self.vocab.get_vocab_size())
+        print("Vocab size:", str(self.vocab.get_vocab_size()))
         print("Saving vocab..")
-        model_utils.save_vocab(self.save_path, self.vocab)
+        model_utils.save_vocab(self.save_path, self.vocab, self.model_name)
         print("Vocab saved!")
 
     def labels_to_indices(self, labels):
+        print("Coverting labels to indexes..")
         label_dict = {'entailment': 2, 'contradiction': 0, 'neutral': 1}
-        label_indices = [label_dict[t] for t in labels]
+        label_indices = [label_dict[t] for t in tqdm(labels)]
         return label_indices
 
     def convert_to_indices(self, premises, hypotheses):
+        print("Coverting sentences to indexes..")
         premise_indices = []
+        premise_masks = []
         hypothesis_indices = []
+        hypothesis_masks = []
 
-        for premise in premises:
-            indices = [self.vocab.get_index(w) for w in word_tokenize(premise)]
+        for premise, hypothesis in tqdm(zip(premises, hypotheses), total=len(premises)):
+            indices = []
+            masks = []
+            premise_tokens = word_tokenize(premise.lower())
+            for i in range(self.seq_len):
+                if i >= len(premise_tokens):
+                    indices.append(0) # Append padding
+                    masks.append(0)
+                else:
+                    w = premise_tokens[i]
+                    if self.vocab.get_index(w):
+                        indices.append(self.vocab.get_index(w))
+                    else:
+                        indices.append(1) # UNK token index
+                    masks.append(1)
             premise_indices.append(indices)
-
-        for hypothesis in hypotheses:
-            indices = [self.vocab.get_index(w) for w in word_tokenize(hypothesis)]
+            premise_masks.append(masks)
+            
+            indices = []
+            masks = []
+            hypothesis_tokens = word_tokenize(hypothesis.lower())
+            for i in range(self.seq_len):
+                if i >= len(hypothesis_tokens):
+                    indices.append(0) # Append padding
+                    masks.append(0)
+                else:
+                    w = hypothesis_tokens[i]
+                    if self.vocab.get_index(w):
+                        indices.append(self.vocab.get_index(w))
+                    else:
+                        indices.append(1) # UNK token index
+                    masks.append(1)
             hypothesis_indices.append(indices)
+            hypothesis_masks.append(masks)
         
-        return premise_indices, hypothesis_indices
+        return premise_indices, premise_masks, hypothesis_indices, hypothesis_masks
 
     def create_train_data(self):
+        print("Creating training data..")
         train_df = load_utils.load_data(self.train_path)
         premises = train_df['sentence1'].to_list()
         hypotheses = train_df['sentence2'].to_list()
@@ -68,27 +100,30 @@ class Trainer:
 
         self.build_vocab(premises, hypotheses)
 
-        premise_indices, hypothesis_indices = self.convert_to_indices(premises, hypotheses)
+        premise_indices, premise_masks, hypothesis_indices, hypothesis_masks = self.convert_to_indices(premises, hypotheses)
         label_indices = self.labels_to_indices(labels)
 
-        train_data = DataSetLoader(premise_indices, hypothesis_indices, label_indices)
+        train_data = DataSetLoader(np.array(premise_indices), np.array(premise_masks), np.array(hypothesis_indices), np.array(hypothesis_masks), np.array(label_indices))
 
-        train_loader = torch.utils.data.DataLoader(train_data, batch_size = self.batch_size)
+        train_loader = torch.utils.data.DataLoader(train_data, batch_size=self.batch_size, shuffle=True)
 
         return train_loader
 
     def create_val_data(self):
+        print("Creating validation data..")
         val_df = load_utils.load_data(self.val_path)
+        val_df = val_df[val_df['gold_label'] != '-'] # The dataset has some entries with labels as '-'
         premises = val_df['sentence1'].to_list()
         hypotheses = val_df['sentence2'].to_list()
+        # self.vocab = model_utils.load_vocab(self.save_path, self.model_name)
         labels = val_df['gold_label'].to_list()
 
-        premise_indices, hypothesis_indices = self.convert_to_indices(premises, hypotheses)
+        premise_indices, premise_masks, hypothesis_indices, hypothesis_masks = self.convert_to_indices(premises, hypotheses)
         label_indices = self.labels_to_indices(labels)
 
-        val_data = DataSetLoader(premise_indices, hypothesis_indices, label_indices)
+        val_data = DataSetLoader(np.array(premise_indices), np.array(premise_masks), np.array(hypothesis_indices), np.array(hypothesis_masks), np.array(label_indices))
 
-        val_loader = torch.utils.data.DataLoader(val_data, batch_size=self.batch_size)
+        val_loader = torch.utils.data.DataLoader(val_data, batch_size=self.batch_size, shuffle=True)
 
         return val_loader
 
@@ -100,6 +135,7 @@ class Trainer:
             model = BiLSTM(hidden_size=self.hidden_size, stacked_layers=self.stacked_layers, weights_matrix=embedding_matrix, device=self.device)
 
         model.to(self.device)
+        print(model)
         return model
 
     def multi_acc(self, predictions, labels):
@@ -110,13 +146,13 @@ class Trainer:
         model.train()
         total_train_loss = 0
         total_train_acc  = 0
-        for step, batch in enumerate(tqdm(train_data)):
-            premises = batch[0].to(self.device)
-            hypotheses = batch[1].to(self.device)
-            labels = batch[2].to(self.device)
+        for premises, premise_mask, hypotheses, hypothesis_mask, labels in tqdm(train_data):
+            premises = premises.to(self.device)
+            hypotheses = hypotheses.to(self.device)
+            labels = labels.to(self.device)
             
             model.zero_grad()
-            predictions = model(premises, hypotheses)
+            predictions = model(premises, premise_mask, hypotheses, hypothesis_mask)
 
             loss = criterion(predictions, labels)
             acc  = self.multi_acc(predictions, labels)
@@ -137,13 +173,13 @@ class Trainer:
         total_val_acc  = 0
         total_val_loss = 0
         with torch.no_grad():
-            for step, batch in enumerate(tqdm(val_data)):
-                premises = batch[0].to(self.device)
-                hypotheses = batch[1].to(self.device)
-                labels = batch[2].to(self.device)
+            for premises, premise_mask, hypotheses, hypothesis_mask, labels in tqdm(val_data):
+                premises = premises.to(self.device)
+                hypotheses = hypotheses.to(self.device)
+                labels = labels.to(self.device)
                 
                 model.zero_grad()
-                predictions = model(premises, hypotheses)
+                predictions = model(premises, premise_mask, hypotheses, hypothesis_mask)
 
                 loss = criterion(predictions, labels)
                 acc  = self.multi_acc(predictions, labels)
@@ -161,12 +197,12 @@ class Trainer:
         last_best = 0
         training_stats = []
 
+        train_data = self.create_train_data()
+        val_data = self.create_val_data()
+
         model = self.create_model()
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(model.parameters(), lr=self.learning_rate, weight_decay=1e-5)
-
-        train_data = self.create_train_data()
-        val_data = self.create_val_data()
 
         for epoch_i in range(0, self.epochs):
             train_acc, train_loss = self.train(train_data, model, criterion, optimizer)
@@ -174,16 +210,17 @@ class Trainer:
             training_stats.append(
                 {
                     'epoch': epoch_i + 1,
-                    'Training Loss': train_loss,
-                    'Training Accur.': train_acc,
-                    'Valid. Loss': val_loss,
-                    'Valid. Accur.': val_acc
+                    'train_loss': train_loss,
+                    'train_acc': train_acc,
+                    'val_loss': val_loss,
+                    'val_acc': val_acc
                 }
             )
             print(f'Epoch {epoch_i + 1}: train_loss: {train_loss:.4f} train_acc: {train_acc:.4f} | val_loss: {val_loss:.4f} val_acc: {val_acc:.4f}')
             if val_acc > last_best:
                 print("Saving model..")
                 model_utils.save_model(model, optimizer, self.model_name, self.save_path, training_stats)
+                last_best = val_acc
                 print("Model saved.")
 
         print("Training complete!")
