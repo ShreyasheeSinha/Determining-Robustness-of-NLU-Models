@@ -2,6 +2,7 @@ import util.load_utils as load_utils
 import util.model_utils as model_utils
 from util.dataset_loader import DataSetLoader
 from models.bilstm import BiLSTM
+from models.cbow import CBOW
 from nltk.tokenize import word_tokenize
 import torch
 import torch.nn as nn
@@ -95,6 +96,8 @@ class Tester:
 
         if self.model_type == 'bilstm':
             model = BiLSTM(hidden_size=self.hidden_size, stacked_layers=self.stacked_layers, weights_matrix=embedding_matrix, device=self.device)
+        elif self.model_type == 'cbow':
+            model = CBOW(weights_matrix=embedding_matrix, seq_len=self.seq_len)
 
         model.to(self.device)
         return model
