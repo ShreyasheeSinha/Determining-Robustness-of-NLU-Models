@@ -20,3 +20,8 @@ def read_jsonl_file(path):
 
 def load_data(path):
     return pd.DataFrame(read_jsonl_file(path))
+
+def save_data(df, path):
+    json_data = df.to_json(orient='records', lines=True)
+    with open(path, 'w') as f:
+        json.dump(json_data, f)
