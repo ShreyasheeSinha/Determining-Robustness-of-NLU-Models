@@ -1,7 +1,7 @@
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import pandas as pd
 import util.load_utils as load_utils
-from datasets import load_metric
+from bert_score import BERTScorer
 from tqdm import tqdm
 tqdm.pandas()
 import string
@@ -13,7 +13,7 @@ class Paraphraser:
         self.data_path = options['data_path']
         self.save_path = options['save_path']
         self.model_name = 'Vamsi/T5_Paraphrase_Paws'
-        self.metric = load_metric("bertscore")
+        self.metric = None
         self.model, self.tokenizer = self.load_paraphraser()
 
     def load_paraphraser(self):
@@ -50,13 +50,14 @@ class Paraphraser:
         for paraphrase in paraphrases:
             if paraphrase == sentence:
                 continue
-            results = self.metric.compute(predictions=[paraphrase], references=[sentence], lang="en")
-            bert_score = results["f1"][0]
+            P, R, F1 = self.metric.score([paraphrase], [sentence])
+            bert_score = F1.item()
             if bert_score >= 0.7:
                 jaccard_score = self.jaccard_similarity(sentence, paraphrase)
                 if jaccard_score <= 0.75:
                     # TODO: Decide whether to return single or multiple phrases
-                    best_paraphrases.append(paraphrase)
+                    details = {'paraphrase': paraphrase, 'bert_score': bert_score, 'jaccard_score': jaccard_score}
+                    best_paraphrases.append(details)
                     # if min_score == None or jaccard_score < min_score:
                     #     min_score = jaccard_score
                     #     best_paraphrase = paraphrase
@@ -92,6 +93,9 @@ class Paraphraser:
 
     def execute(self):
         data = self.load_data()
-        data['sentence_1_dash'] = data['sentence1'].progress_apply(self.generate_paraphrase)
-        data['sentence_2_dash'] = data['sentence2'].progress_apply(self.generate_paraphrase)
+        idf_sents = data['sentence1'].to_list()
+        idf_sents.extend(data['sentence2'].to_list())
+        self.metric = BERTScorer(lang="en", rescale_with_baseline=True, idf=True, idf_sents=idf_sents)
+        data['sentence1dash'] = data['sentence1'].progress_apply(self.generate_paraphrase)
+        data['sentence2dash'] = data['sentence2'].progress_apply(self.generate_paraphrase)
         load_utils.save_data(data, self.save_path)
