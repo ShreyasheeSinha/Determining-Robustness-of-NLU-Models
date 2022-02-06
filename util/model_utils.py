@@ -23,6 +23,11 @@ def save_model(model, optimizer, model_name, path, training_stats):
         'training_stats': training_stats
     }, full_path)
 
+def save_transformer(model, tokenizer, model_name, path):
+    full_path = os.path.join(path, model_name)
+    model.save_pretrained(full_path)
+    tokenizer.save_pretrained(full_path)
+
 def load_model(path, model_name):
     # Load model state dict along with model data
     full_path = os.path.join(path, model_name)

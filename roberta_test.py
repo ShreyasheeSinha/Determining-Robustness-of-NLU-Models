@@ -1,5 +1,5 @@
 from util.roberta_dataset_loader import RobertaDatasetLoader
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from models.transformer import Transformer
 import numpy as np
 import torch
 from tqdm import tqdm
@@ -14,8 +14,8 @@ class RobertaTest():
         self.device = options['device']
         self.test_path = options['test_path']
         self.batch_size = options['batch_size']
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-        self.model = AutoModelForSequenceClassification.from_pretrained(self.model_name)
+        transformer = Transformer(self.model_name)
+        self.model, self.tokenizer = transformer.get_model_and_tokenizer()
         self.model.to(self.device)
 
     def flat_accuracy(self, preds, labels):
