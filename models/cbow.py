@@ -14,9 +14,9 @@ class CBOW(nn.Module):
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(p = dropout)
 
-        self.lin1 = nn.Linear(4 * seq_len * embedding_dim, 128) # As per the concat logic the linear layer needs to be 4 * seq_len * embedding_dim
-        self.lin2 = nn.Linear(128, 128)
-        self.lin3 = nn.Linear(128, 3)
+        self.lin1 = nn.Linear(4 * embedding_dim, embedding_dim) # As per the concat logic the linear layer needs to be 4 * embedding_dim
+        self.lin2 = nn.Linear(embedding_dim, embedding_dim)
+        self.lin3 = nn.Linear(embedding_dim, 3)
 
         for lin in [self.lin1, self.lin2, self.lin3]:
             nn.init.xavier_uniform_(lin.weight)
@@ -35,7 +35,8 @@ class CBOW(nn.Module):
     def forward_once(self, sequence):
         batch_size = sequence.size(0)
         embedded_sequence = self.embedding(sequence)
-        return embedded_sequence.view(batch_size, -1)
+        avg_vector = embedded_sequence.mean(1)
+        return avg_vector
 
     """
     The masks are added to maintain code consistency between
