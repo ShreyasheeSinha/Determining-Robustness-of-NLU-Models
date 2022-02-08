@@ -1,10 +1,12 @@
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import pandas as pd
 import util.load_utils as load_utils
-from bert_score import BERTScorer
 from tqdm import tqdm
 tqdm.pandas()
 import string
+import torch
+import numpy as np
+import argparse
 
 class Paraphraser:
 
@@ -13,7 +15,7 @@ class Paraphraser:
         self.data_path = options['data_path']
         self.save_path = options['save_path']
         self.model_name = 'Vamsi/T5_Paraphrase_Paws'
-        self.metric = None
+        # self.metric = None
         self.model, self.tokenizer = self.load_paraphraser()
 
     def load_paraphraser(self):
@@ -24,6 +26,27 @@ class Paraphraser:
 
     def load_data(self):
         return load_utils.load_data(self.data_path)
+
+    def get_sentence_counts(self, data):
+        datasets = data['dataset'].unique()
+        print("Total length of the dataset: ", len(data))
+        for dataset in datasets:
+            print(dataset, len(data[data['dataset'] == dataset]))
+
+    def get_paraphrases_counts(self, data):
+        total_premise_paraphrases = 0
+        total_hypothesis_paraphrases = 0
+        datasets = data['dataset'].unique()
+        for dataset in datasets:
+            temp = data[data['dataset'] == dataset]
+            premise_paraphrases = temp['sentence1dash'].str.len().sum()
+            hypothesis_paraphrases = temp['sentence2dash'].str.len().sum()
+            print(dataset, "Premise paraphrases:", premise_paraphrases, "Hypothesis paraphrases:", hypothesis_paraphrases)
+            total_premise_paraphrases += premise_paraphrases
+            total_hypothesis_paraphrases += hypothesis_paraphrases
+        total_paraphrases = total_premise_paraphrases + total_hypothesis_paraphrases
+        print("Total premise paraphrases:", total_premise_paraphrases, "Total hypothesis paraphrases:", total_hypothesis_paraphrases)
+        print("Total paraphrases:", total_paraphrases)
 
     def jaccard_similarity(self, s1, s2): 
         s1 = self.preprocess(s1)
@@ -48,16 +71,16 @@ class Paraphraser:
         # min_score = None
         best_paraphrases = []
         for paraphrase in paraphrases:
-            if paraphrase == sentence:
+            if paraphrase.lower() == sentence.lower():
                 continue
-            P, R, F1 = self.metric.score([paraphrase], [sentence])
-            bert_score = F1.item()
-            if bert_score >= 0.7:
-                jaccard_score = self.jaccard_similarity(sentence, paraphrase)
-                if jaccard_score <= 0.75:
-                    # TODO: Decide whether to return single or multiple phrases
-                    details = {'paraphrase': paraphrase, 'bert_score': bert_score, 'jaccard_score': jaccard_score}
-                    best_paraphrases.append(details)
+            # P, R, F1 = self.metric.score([paraphrase], [sentence])
+            # bert_score = F1.item()
+            # if bert_score >= 0.7:
+            jaccard_score = self.jaccard_similarity(sentence, paraphrase)
+            if jaccard_score <= 0.75:
+                # TODO: Decide whether to return single or multiple phrases
+                details = {'paraphrase': paraphrase, 'jaccard_score': jaccard_score}
+                best_paraphrases.append(details)
                     # if min_score == None or jaccard_score < min_score:
                     #     min_score = jaccard_score
                     #     best_paraphrase = paraphrase
@@ -81,7 +104,7 @@ class Paraphraser:
             top_k=120,
             top_p=0.95,
             early_stopping=True,
-            num_return_sequences=10
+            num_return_sequences=3
         )
 
         paraphrases = []
@@ -93,9 +116,36 @@ class Paraphraser:
 
     def execute(self):
         data = self.load_data()
-        idf_sents = data['sentence1'].to_list()
-        idf_sents.extend(data['sentence2'].to_list())
-        self.metric = BERTScorer(lang="en", rescale_with_baseline=True, idf=True, idf_sents=idf_sents)
+        self.get_sentence_counts(data)
+        # idf_sents = data['sentence1'].to_list()
+        # idf_sents.extend(data['sentence2'].to_list())
+        # self.metric = BERTScorer(lang="en", rescale_with_baseline=True, idf=True, idf_sents=idf_sents)
         data['sentence1dash'] = data['sentence1'].progress_apply(self.generate_paraphrase)
         data['sentence2dash'] = data['sentence2'].progress_apply(self.generate_paraphrase)
+        self.get_paraphrases_counts(data)
         load_utils.save_data(data, self.save_path)
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data_path", help="Path to the dataset jsonl file", default="./RTE_dev.jsonl")
+    parser.add_argument("--save_path", help="Path with file name where to save the paraphrased dataset", default="./RTE_dev_paraphrased.jsonl") # TODO: Add proper path
+    return parser.parse_args()
+
+if __name__ == '__main__':
+    # Set numpy, tensorflow and python seeds for reproducibility.
+    torch.manual_seed(42)
+    np.random.seed(42)
+
+    args = parse_args()
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(device)
+
+    options = {}
+    options['device'] = device
+    options['data_path'] = args.data_path
+    options['save_path'] = args.save_path
+    print(options)
+
+    paraphraser = Paraphraser(options)
+    paraphraser.execute()
