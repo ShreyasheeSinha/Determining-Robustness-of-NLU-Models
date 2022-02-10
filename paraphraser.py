@@ -14,6 +14,7 @@ class Paraphraser:
         self.device = options['device']
         self.data_path = options['data_path']
         self.save_path = options['save_path']
+        self.jaccard_score = options['jaccard_score']
         self.model_name = 'Vamsi/T5_Paraphrase_Paws'
         # self.metric = None
         self.model, self.tokenizer = self.load_paraphraser()
@@ -77,7 +78,7 @@ class Paraphraser:
             # bert_score = F1.item()
             # if bert_score >= 0.7:
             jaccard_score = self.jaccard_similarity(sentence, paraphrase)
-            if jaccard_score <= 0.75:
+            if jaccard_score <= self.jaccard_score:
                 # TODO: Decide whether to return single or multiple phrases
                 details = {'paraphrase': paraphrase, 'jaccard_score': jaccard_score}
                 best_paraphrases.append(details)
@@ -129,6 +130,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", help="Path to the dataset jsonl file", default="./RTE_dev.jsonl")
     parser.add_argument("--save_path", help="Path with file name where to save the paraphrased dataset", default="./RTE_dev_paraphrased.jsonl") # TODO: Add proper path
+    parser.add_argument("--jaccard_score", help="Path with file name where to save the paraphrased dataset", default=0.75, type=float)
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -142,6 +144,7 @@ if __name__ == '__main__':
     print(device)
 
     options = {}
+    options['jaccard_score'] = args.jaccard_score
     options['device'] = device
     options['data_path'] = args.data_path
     options['save_path'] = args.save_path
