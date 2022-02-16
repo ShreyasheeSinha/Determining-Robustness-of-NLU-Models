@@ -9,6 +9,7 @@ import torch.nn as nn
 import time
 from tqdm import tqdm
 import numpy as np
+import argparse
 
 class Tester:
 
@@ -145,3 +146,41 @@ class Tester:
 
         print("Testing complete!")
         print("Total testing took {:} (h:mm:ss)".format(model_utils.format_time(time.time()-total_t0)))
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model_type", help="The model type you wish to use", choices=["bilstm", "cbow"], default="bilstm")
+    parser.add_argument("--save_path", help="Directory to save model and model checkpoints into", default="./saved_model")
+    parser.add_argument("--test_path", help="Path to the test dataset jsonl file", default="./data/multinli_1.0/multinli_1.0_dev_mismatched.jsonl")
+    parser.add_argument("--batch_size", help="Batch size", type=int, default=32)
+    parser.add_argument("--emb_path", help="Path to the GloVe embeddings", default="./data/glove.840B.300d.txt")
+    parser.add_argument("--model_name", help="A custom name given to your model", required=True)
+    return check_args(parser.parse_args())
+
+def check_args(args):
+    assert args.batch_size >= 1
+    return args
+
+if __name__ == '__main__':
+    # Set numpy, tensorflow and python seeds for reproducibility.
+    torch.manual_seed(42)
+    np.random.seed(42)
+
+    args = parse_args()
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(device)
+
+    options = {}
+    save_path = f'{args.save_path}/'
+    model_name = args.model_type + "_" + args.model_name
+
+    print("Testing model..")
+    options = model_utils.load_model_config(save_path, model_name)
+    options['device'] = device
+    options['emb_path'] = args.emb_path
+    options['test_path'] = args.test_path
+    options['batch_size'] = args.batch_size
+    print(options)
+    tester = Tester(options)
+    tester.execute()
