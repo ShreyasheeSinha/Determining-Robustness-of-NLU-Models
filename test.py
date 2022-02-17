@@ -24,6 +24,7 @@ class Tester:
         self.seq_len = options['seq_len']
         self.hidden_size = options['hidden_size']
         self.stacked_layers = options['stacked_layers']
+        self.num_classes = options['num_classes']
         self.vocab = model_utils.load_vocab(self.save_path, self.model_name)
 
     def labels_to_indices(self, labels):
@@ -80,10 +81,11 @@ class Tester:
         val_df = val_df[val_df['gold_label'] != '-']
         premises = val_df['sentence1'].to_list()
         hypotheses = val_df['sentence2'].to_list()
-        labels = val_df['gold_label'].to_list()
+        label_int = val_df['gold_label'].astype(int) # Convert boolean columns to int, True: 1 and False: 0
+        label_indices = label_int.to_list()
 
         premise_indices, premise_masks, hypothesis_indices, hypothesis_masks = self.convert_to_indices(premises, hypotheses)
-        label_indices = self.labels_to_indices(labels)
+        # label_indices = self.labels_to_indices(labels)
 
         test_data = DataSetLoader(np.array(premise_indices), np.array(premise_masks), np.array(hypothesis_indices), np.array(hypothesis_masks), np.array(label_indices))
 
@@ -96,15 +98,20 @@ class Tester:
         embedding_matrix = model_utils.create_embedding_matrix(embeddings_index, 300, self.vocab)
 
         if self.model_type == 'bilstm':
-            model = BiLSTM(hidden_size=self.hidden_size, stacked_layers=self.stacked_layers, weights_matrix=embedding_matrix, device=self.device)
+            model = BiLSTM(hidden_size=self.hidden_size, stacked_layers=self.stacked_layers, weights_matrix=embedding_matrix, device=self.device, num_classes=self.num_classes)
         elif self.model_type == 'cbow':
-            model = CBOW(weights_matrix=embedding_matrix, seq_len=self.seq_len)
+            model = CBOW(weights_matrix=embedding_matrix, num_classes=self.num_classes)
 
         model.to(self.device)
         return model
 
     def multi_acc(self, predictions, labels):
-        acc = (torch.log_softmax(predictions, dim=1).argmax(dim=1) == labels).sum().float() / float(labels.size(0))
+        if self.num_classes == 3:
+            predictions = torch.log_softmax(predictions, dim=1).argmax(dim=1)
+            two_class_predictions = torch.where(predictions <= 1, 0, 1) # Collapse neutral and contradiction into a single class 0, entailment becomes class 1
+            acc = (two_class_predictions == labels).sum().float() / float(labels.size(0))
+        else:
+            acc = (torch.log_softmax(predictions, dim=1).argmax(dim=1) == labels).sum().float() / float(labels.size(0))
         return acc
 
     def test(self, test_data, model, criterion):

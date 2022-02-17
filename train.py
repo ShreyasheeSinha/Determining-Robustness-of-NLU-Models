@@ -30,6 +30,7 @@ class Trainer:
         self.stacked_layers = options['stacked_layers']
         self.learning_rate = options['learning_rate']
         self.seq_len = options['seq_len']
+        self.num_classes = options['num_classes']
         self.vocab = None
 
     def build_vocab(self, premises, hypotheses):
@@ -46,7 +47,10 @@ class Trainer:
 
     def labels_to_indices(self, labels):
         print("Coverting labels to indexes..")
-        label_dict = {'entailment': 2, 'contradiction': 0, 'neutral': 1}
+        if self.num_classes == 2:
+            label_dict = {'entailment': 1, 'non-entailment': 0}
+        else:
+            label_dict = {'entailment': 2, 'contradiction': 0, 'neutral': 1}
         label_indices = [label_dict[t] for t in tqdm(labels)]
         return label_indices
 
@@ -99,6 +103,9 @@ class Trainer:
         train_df = load_utils.load_data(self.train_path)
         premises = train_df['sentence1'].to_list()
         hypotheses = train_df['sentence2'].to_list()
+        if self.num_classes == 2:
+            train_df['gold_label'] = train_df['gold_label'].replace('contradiction', 'non-entailment')
+            train_df['gold_label'] = train_df['gold_label'].replace('neutral', 'non-entailment')
         labels = train_df['gold_label'].to_list()
 
         self.build_vocab(premises, hypotheses)
@@ -118,11 +125,10 @@ class Trainer:
         val_df = val_df[val_df['gold_label'] != '-'] # The dataset has some entries with labels as '-'
         premises = val_df['sentence1'].to_list()
         hypotheses = val_df['sentence2'].to_list()
-        # self.vocab = model_utils.load_vocab(self.save_path, self.model_name)
-        labels = val_df['gold_label'].to_list()
+        label_int = val_df['gold_label'].astype(int) # Convert boolean columns to int, True: 1 and False: 0
+        label_indices = label_int.to_list()
 
         premise_indices, premise_masks, hypothesis_indices, hypothesis_masks = self.convert_to_indices(premises, hypotheses)
-        label_indices = self.labels_to_indices(labels)
 
         val_data = DataSetLoader(np.array(premise_indices), np.array(premise_masks), np.array(hypothesis_indices), np.array(hypothesis_masks), np.array(label_indices))
 
@@ -135,16 +141,21 @@ class Trainer:
         embedding_matrix = model_utils.create_embedding_matrix(embeddings_index, 300, self.vocab)
 
         if self.model_type == 'bilstm':
-            model = BiLSTM(hidden_size=self.hidden_size, stacked_layers=self.stacked_layers, weights_matrix=embedding_matrix, device=self.device)
+            model = BiLSTM(hidden_size=self.hidden_size, stacked_layers=self.stacked_layers, weights_matrix=embedding_matrix, device=self.device, num_classes=self.num_classes)
         elif self.model_type == 'cbow':
-            model = CBOW(weights_matrix=embedding_matrix, seq_len=self.seq_len)
+            model = CBOW(weights_matrix=embedding_matrix, num_classes=self.num_classes)
 
         model.to(self.device)
         print(model)
         return model
 
-    def multi_acc(self, predictions, labels):
-        acc = (torch.log_softmax(predictions, dim=1).argmax(dim=1) == labels).sum().float() / float(labels.size(0))
+    def multi_acc(self, predictions, labels, val=False):
+        if val and self.num_classes == 3:
+            predictions = torch.log_softmax(predictions, dim=1).argmax(dim=1)
+            two_class_predictions = torch.where(predictions <= 1, 0, 1) # Collapse neutral and contradiction into a single class 0, entailment becomes class 1
+            acc = (two_class_predictions == labels).sum().float() / float(labels.size(0))
+        else:
+            acc = (torch.log_softmax(predictions, dim=1).argmax(dim=1) == labels).sum().float() / float(labels.size(0))
         return acc
 
     def train(self, train_data, model, criterion, optimizer):
@@ -187,7 +198,7 @@ class Trainer:
                 predictions = model(premises, premise_mask, hypotheses, hypothesis_mask)
 
                 loss = criterion(predictions, labels)
-                acc  = self.multi_acc(predictions, labels)
+                acc  = self.multi_acc(predictions, labels, val=True)
 
                 total_val_loss += loss.item()
                 total_val_acc  += acc.item()
@@ -244,6 +255,7 @@ def parse_args():
     parser.add_argument("--hidden_size", help="Hidden units in the LSTM", type=int, default=64)
     parser.add_argument("--stacked_layers", help="Number of stacked LSTM units", type=int, default=2)
     parser.add_argument("--seq_len", help="Maximum sequence length", type=int, default=50)
+    parser.add_argument("--num_classes", help="Number of output classes - RTE has 2, MNLI has 3", type=int, choices=[2, 3], default=2)
     return check_args(parser.parse_args())
 
 def check_args(args):
@@ -285,6 +297,7 @@ if __name__ == '__main__':
     options['epochs'] = args.epochs
     options['emb_path'] = args.emb_path
     options['batch_size'] = args.batch_size
+    options['num_classes'] = args.num_classes
     options['learning_rate'] = 0.005 # TODO: Make this a CLI arg
     print(options)
     model_utils.save_model_config(save_path, model_name, options)
