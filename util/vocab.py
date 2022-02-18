@@ -4,7 +4,6 @@ to create the vocabulary object for a given model.
 This object must be saved in order to use
 the model in the future.
 """
-from nltk.tokenize import word_tokenize
 
 class Vocabulary:
     def __init__(self):
@@ -14,11 +13,11 @@ class Vocabulary:
         self.index2word = {1: UNK_TOKEN}
         self.n_words = 1
 
-    def addSentence(self, sentence):
-        for word in word_tokenize(sentence):
-            self.addWord(word)
+    def add_sentence(self, sentence):
+        for word in sentence.split(' '):
+            self.add_word(word)
 
-    def addWord(self, word):
+    def add_word(self, word):
         if word not in self.word2index:
             self.word2index[word] = self.n_words + 1
             self.word2count[word] = 1

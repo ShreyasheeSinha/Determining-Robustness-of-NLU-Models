@@ -4,7 +4,6 @@ import util.model_utils as model_utils
 from util.dataset_loader import DataSetLoader
 from models.bilstm import BiLSTM
 from models.cbow import CBOW
-from nltk.tokenize import word_tokenize
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -13,6 +12,7 @@ from tqdm import tqdm
 import numpy as np
 import argparse
 import os
+import string
 
 class Trainer:
 
@@ -33,12 +33,17 @@ class Trainer:
         self.num_classes = options['num_classes']
         self.vocab = None
 
+    def strip_punctuations(self, sentence):
+        table = str.maketrans(dict.fromkeys(string.punctuation))
+        new_s = sentence.translate(table) 
+        return new_s
+
     def build_vocab(self, premises, hypotheses):
         self.vocab = Vocabulary()
         print("Building vocab..")
         for premise, hypothesis in tqdm(zip(premises, hypotheses), total=len(premises)):
-            self.vocab.addSentence(premise.lower())
-            self.vocab.addSentence(hypothesis.lower())
+            self.vocab.add_sentence(self.strip_punctuations(premise).lower())
+            self.vocab.add_sentence(self.strip_punctuations(hypothesis).lower())
 
         print("Vocab size:", str(self.vocab.get_vocab_size()))
         print("Saving vocab..")
@@ -64,7 +69,7 @@ class Trainer:
         for premise, hypothesis in tqdm(zip(premises, hypotheses), total=len(premises)):
             indices = []
             masks = []
-            premise_tokens = word_tokenize(premise.lower())
+            premise_tokens = premise.split(' ')
             for i in range(self.seq_len):
                 if i >= len(premise_tokens):
                     indices.append(0) # Append padding
@@ -81,7 +86,7 @@ class Trainer:
             
             indices = []
             masks = []
-            hypothesis_tokens = word_tokenize(hypothesis.lower())
+            hypothesis_tokens = hypothesis.split(' ')
             for i in range(self.seq_len):
                 if i >= len(hypothesis_tokens):
                     indices.append(0) # Append padding

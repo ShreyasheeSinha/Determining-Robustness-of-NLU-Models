@@ -3,13 +3,13 @@ import util.model_utils as model_utils
 from util.dataset_loader import DataSetLoader
 from models.bilstm import BiLSTM
 from models.cbow import CBOW
-from nltk.tokenize import word_tokenize
 import torch
 import torch.nn as nn
 import time
 from tqdm import tqdm
 import numpy as np
 import argparse
+import string
 
 class Tester:
 
@@ -32,6 +32,11 @@ class Tester:
         label_indices = [label_dict[t] for t in labels]
         return label_indices
 
+    def strip_punctuations(self, sentence):
+        table = str.maketrans(dict.fromkeys(string.punctuation))
+        new_s = sentence.translate(table) 
+        return new_s
+
     def convert_to_indices(self, premises, hypotheses):
         print("Coverting sentences to indexes..")
         premise_indices = []
@@ -42,7 +47,7 @@ class Tester:
         for premise, hypothesis in tqdm(zip(premises, hypotheses), total=len(premises)):
             indices = []
             masks = []
-            premise_tokens = word_tokenize(premise.lower())
+            premise_tokens = self.strip_punctuations(premise).split(' ')
             for i in range(self.seq_len):
                 if i >= len(premise_tokens):
                     indices.append(0) # Append padding
@@ -59,7 +64,7 @@ class Tester:
             
             indices = []
             masks = []
-            hypothesis_tokens = word_tokenize(hypothesis.lower())
+            hypothesis_tokens = self.strip_punctuations(hypothesis).split(' ')
             for i in range(self.seq_len):
                 if i >= len(hypothesis_tokens):
                     indices.append(0) # Append padding
