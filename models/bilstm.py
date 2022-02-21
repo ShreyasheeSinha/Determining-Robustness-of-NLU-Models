@@ -7,7 +7,7 @@ import torch.nn as nn
 
 class BiLSTM(nn.Module):
 
-    def __init__(self, hidden_size, stacked_layers, weights_matrix, device, dropout=0.2):
+    def __init__(self, hidden_size, stacked_layers, weights_matrix, device, dropout=0.2, num_classes=2):
         super(BiLSTM, self).__init__()
         self.directions = 2
         self.num_layers = 2
@@ -27,7 +27,7 @@ class BiLSTM(nn.Module):
 
         self.lin1 = nn.Linear(self.hidden_size * self.concat, self.hidden_size)
         self.lin2 = nn.Linear(self.hidden_size, self.hidden_size)
-        self.lin3 = nn.Linear(self.hidden_size, 3)
+        self.lin3 = nn.Linear(self.hidden_size, num_classes)
 
         for lin in [self.lin1, self.lin2, self.lin3]:
             nn.init.xavier_uniform_(lin.weight)

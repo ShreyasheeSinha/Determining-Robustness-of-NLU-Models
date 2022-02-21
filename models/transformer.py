@@ -2,11 +2,11 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 class Transformer():
 
-    def __init__(self, model_name, classification_head=False):
+    def __init__(self, model_name, classification_head=False, num_classes=2):
         if classification_head:
             self.model = AutoModelForSequenceClassification.from_pretrained(
                 model_name, 
-                num_labels = 3, # The number of output labels--3 for entailment classification tasks.  
+                num_labels = num_classes, # The number of output labels.  
                 output_attentions = False, # Whether the model returns attentions weights.
                 output_hidden_states = False, # Whether the model returns all hidden-states.
             )

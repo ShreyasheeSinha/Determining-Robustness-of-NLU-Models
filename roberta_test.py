@@ -6,6 +6,7 @@ from tqdm import tqdm
 import time
 import util.model_utils as model_utils
 import argparse
+import util.load_utils as load_utils
 
 class RobertaTest():
 
@@ -19,8 +20,11 @@ class RobertaTest():
         self.model.to(self.device)
 
     def flat_accuracy(self, preds, labels):
+        output_shape = preds.shape[-1]
         pred_flat = np.argmax(preds, axis=1).flatten()
         labels_flat = labels.flatten()
+        if output_shape == 3:
+            pred_flat = np.where(pred_flat <= 1, 0, 1)
         return np.sum(pred_flat == labels_flat) / len(labels_flat)
 
     def test(self, data_loader):
@@ -64,7 +68,9 @@ class RobertaTest():
     def execute(self):
         total_t0 = time.time()
 
-        dataset = RobertaDatasetLoader(self.test_path, self.tokenizer)
+        test_df = load_utils.load_data(self.test_path)
+        test_df['gold_label'] = test_df['gold_label'].astype(int)
+        dataset = RobertaDatasetLoader(test_df, self.tokenizer)
         data_loader = dataset.get_data_loaders(self.batch_size)
 
         test_acc, test_loss = self.test(data_loader)

@@ -1,16 +1,15 @@
+from cProfile import label
 import torch
 from torch.utils.data import Dataset, TensorDataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
 from tqdm import tqdm
-import util.load_utils as load_utils
 
 class RobertaDatasetLoader(Dataset):
 
-    def __init__(self, data_path, tokenizer):
-        self.label_dict = {'contradiction': 0, 'neutral': 1, 'entailment': 2}
-        self.data = load_utils.load_data(data_path)
-        self.data = self.data[self.data['gold_label'] != '-']
+    def __init__(self, data, tokenizer, label_dict=None):
+        self.data = data
         self.tokenizer = tokenizer
+        self.label_dict = label_dict
 
     def process_data(self):
         print("Processing data..")
@@ -30,7 +29,10 @@ class RobertaDatasetLoader(Dataset):
                 token_ids.append(torch.tensor(encoded_values['input_ids']))
                 seg_ids.append(torch.tensor(encoded_values['token_type_ids']))
                 mask_ids.append(torch.tensor(encoded_values['attention_mask']))
-                y.append(self.label_dict[label])
+                if self.label_dict != None: # In case of the RTE dataset, each column value is an integer itself. Hence, no label_dict is needed
+                    y.append(self.label_dict[label])
+                else:
+                    y.append(label)
         
         token_ids = pad_sequence(token_ids, batch_first=True)
         mask_ids = pad_sequence(mask_ids, batch_first=True)

@@ -7,6 +7,7 @@ import time
 import util.model_utils as model_utils
 import argparse
 from transformers import AdamW, get_linear_schedule_with_warmup
+import util.load_utils as load_utils
 
 class RobertaTrain():
 
@@ -18,13 +19,16 @@ class RobertaTrain():
         self.batch_size = options['batch_size']
         self.epochs = options['epochs']
         self.save_path = options['save_path']
-        transformer = Transformer(self.model_name, classification_head=True)
+        self.num_classes = options['num_classes']
+        transformer = Transformer(self.model_name, classification_head=True, num_classes=self.num_classes)
         self.model, self.tokenizer = transformer.get_model_and_tokenizer()
         self.model.to(self.device)
     
-    def flat_accuracy(self, preds, labels):
+    def flat_accuracy(self, preds, labels, val=False):
         pred_flat = np.argmax(preds, axis=1).flatten()
         labels_flat = labels.flatten()
+        if val and self.num_classes == 3:
+            pred_flat = np.where(pred_flat <= 1, 0, 1)
         return np.sum(pred_flat == labels_flat) / len(labels_flat)
 
     def train(self, data_loader, optimizer, scheduler):
@@ -91,7 +95,7 @@ class RobertaTrain():
                 logits = logits.detach().cpu().numpy()
                 label_ids = labels.to('cpu').numpy()
  
-                acc = self.flat_accuracy(logits, label_ids)
+                acc = self.flat_accuracy(logits, label_ids, val=True)
 
                 total_loss += loss.item()
                 total_acc  += acc
@@ -106,10 +110,19 @@ class RobertaTrain():
         last_best = 0
         print("Training model..")
 
-        train_dataset = RobertaDatasetLoader(self.train_path, self.tokenizer)
+        train_df = load_utils.load_data(self.train_path)
+        if self.num_classes == 2:
+            train_df['gold_label'] = train_df['gold_label'].replace('contradiction', 'non-entailment')
+            train_df['gold_label'] = train_df['gold_label'].replace('neutral', 'non-entailment')
+            label_dict = {'entailment': 1, 'non-entailment': 0}
+        else:
+            label_dict = {'entailment': 2, 'contradiction': 0, 'neutral': 1}
+        train_dataset = RobertaDatasetLoader(train_df, self.tokenizer, label_dict=label_dict)
         train_data_loader = train_dataset.get_data_loaders(self.batch_size)
 
-        val_dataset = RobertaDatasetLoader(self.val_path, self.tokenizer)
+        val_df = load_utils.load_data(self.val_path)
+        val_df['gold_label'] = val_df['gold_label'].astype(int)
+        val_dataset = RobertaDatasetLoader(val_df, self.tokenizer) # Validation is on RTE, hence there are 2 classes
         val_data_loader = val_dataset.get_data_loaders(self.batch_size)
 
         optimizer = AdamW(self.model.parameters(),
@@ -145,6 +158,7 @@ def parse_args():
     parser.add_argument("--batch_size", help="Batch size", type=int, default=4)
     parser.add_argument("--epochs", help="Number of epochs", type=int, default=5)
     parser.add_argument("--model_name", help="Name of the huggingface model or the path to the directory containing a pre-trained transformer", default="roberta-base")
+    parser.add_argument("--num_classes", help="Number of output classes - RTE has 2, MNLI has 3", type=int, choices=[2, 3], default=2)
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -165,6 +179,7 @@ if __name__ == '__main__':
     options['model_name'] = args.model_name
     options['save_path'] = args.save_path
     options['epochs'] = args.epochs
+    options['num_classes'] = args.num_classes
     print(options)
 
     roberta_trainer = RobertaTrain(options)

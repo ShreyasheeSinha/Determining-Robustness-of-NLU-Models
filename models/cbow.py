@@ -4,7 +4,7 @@ import torch.nn as nn
 
 class CBOW(nn.Module):
 
-    def __init__(self, weights_matrix, seq_len, dropout=0.2):
+    def __init__(self, weights_matrix, dropout=0.2, num_classes=2):
         super(CBOW, self).__init__()
 
         num_embeddings, embedding_dim = weights_matrix.shape[0], weights_matrix.shape[1]
@@ -16,7 +16,7 @@ class CBOW(nn.Module):
 
         self.lin1 = nn.Linear(4 * embedding_dim, embedding_dim) # As per the concat logic the linear layer needs to be 4 * embedding_dim
         self.lin2 = nn.Linear(embedding_dim, embedding_dim)
-        self.lin3 = nn.Linear(embedding_dim, 3)
+        self.lin3 = nn.Linear(embedding_dim, num_classes)
 
         for lin in [self.lin1, self.lin2, self.lin3]:
             nn.init.xavier_uniform_(lin.weight)
@@ -33,7 +33,6 @@ class CBOW(nn.Module):
         )
 
     def forward_once(self, sequence):
-        batch_size = sequence.size(0)
         embedded_sequence = self.embedding(sequence)
         avg_vector = embedded_sequence.mean(1)
         return avg_vector

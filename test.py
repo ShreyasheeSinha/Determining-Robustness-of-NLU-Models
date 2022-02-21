@@ -3,12 +3,13 @@ import util.model_utils as model_utils
 from util.dataset_loader import DataSetLoader
 from models.bilstm import BiLSTM
 from models.cbow import CBOW
-from nltk.tokenize import word_tokenize
 import torch
 import torch.nn as nn
 import time
 from tqdm import tqdm
 import numpy as np
+import argparse
+import string
 
 class Tester:
 
@@ -23,12 +24,18 @@ class Tester:
         self.seq_len = options['seq_len']
         self.hidden_size = options['hidden_size']
         self.stacked_layers = options['stacked_layers']
+        self.num_classes = options['num_classes']
         self.vocab = model_utils.load_vocab(self.save_path, self.model_name)
 
     def labels_to_indices(self, labels):
         label_dict = {'entailment': 2, 'contradiction': 0, 'neutral': 1}
         label_indices = [label_dict[t] for t in labels]
         return label_indices
+
+    def strip_punctuations(self, sentence):
+        table = str.maketrans(dict.fromkeys(string.punctuation))
+        new_s = sentence.translate(table) 
+        return new_s
 
     def convert_to_indices(self, premises, hypotheses):
         print("Coverting sentences to indexes..")
@@ -40,7 +47,7 @@ class Tester:
         for premise, hypothesis in tqdm(zip(premises, hypotheses), total=len(premises)):
             indices = []
             masks = []
-            premise_tokens = word_tokenize(premise.lower())
+            premise_tokens = self.strip_punctuations(premise).split(' ')
             for i in range(self.seq_len):
                 if i >= len(premise_tokens):
                     indices.append(0) # Append padding
@@ -57,7 +64,7 @@ class Tester:
             
             indices = []
             masks = []
-            hypothesis_tokens = word_tokenize(hypothesis.lower())
+            hypothesis_tokens = self.strip_punctuations(hypothesis).split(' ')
             for i in range(self.seq_len):
                 if i >= len(hypothesis_tokens):
                     indices.append(0) # Append padding
@@ -79,10 +86,11 @@ class Tester:
         val_df = val_df[val_df['gold_label'] != '-']
         premises = val_df['sentence1'].to_list()
         hypotheses = val_df['sentence2'].to_list()
-        labels = val_df['gold_label'].to_list()
+        label_int = val_df['gold_label'].astype(int) # Convert boolean columns to int, True: 1 and False: 0
+        label_indices = label_int.to_list()
 
         premise_indices, premise_masks, hypothesis_indices, hypothesis_masks = self.convert_to_indices(premises, hypotheses)
-        label_indices = self.labels_to_indices(labels)
+        # label_indices = self.labels_to_indices(labels)
 
         test_data = DataSetLoader(np.array(premise_indices), np.array(premise_masks), np.array(hypothesis_indices), np.array(hypothesis_masks), np.array(label_indices))
 
@@ -95,15 +103,20 @@ class Tester:
         embedding_matrix = model_utils.create_embedding_matrix(embeddings_index, 300, self.vocab)
 
         if self.model_type == 'bilstm':
-            model = BiLSTM(hidden_size=self.hidden_size, stacked_layers=self.stacked_layers, weights_matrix=embedding_matrix, device=self.device)
+            model = BiLSTM(hidden_size=self.hidden_size, stacked_layers=self.stacked_layers, weights_matrix=embedding_matrix, device=self.device, num_classes=self.num_classes)
         elif self.model_type == 'cbow':
-            model = CBOW(weights_matrix=embedding_matrix, seq_len=self.seq_len)
+            model = CBOW(weights_matrix=embedding_matrix, num_classes=self.num_classes)
 
         model.to(self.device)
         return model
 
     def multi_acc(self, predictions, labels):
-        acc = (torch.log_softmax(predictions, dim=1).argmax(dim=1) == labels).sum().float() / float(labels.size(0))
+        if self.num_classes == 3:
+            predictions = torch.log_softmax(predictions, dim=1).argmax(dim=1)
+            two_class_predictions = torch.where(predictions <= 1, 0, 1) # Collapse neutral and contradiction into a single class 0, entailment becomes class 1
+            acc = (two_class_predictions == labels).sum().float() / float(labels.size(0))
+        else:
+            acc = (torch.log_softmax(predictions, dim=1).argmax(dim=1) == labels).sum().float() / float(labels.size(0))
         return acc
 
     def test(self, test_data, model, criterion):
@@ -145,3 +158,41 @@ class Tester:
 
         print("Testing complete!")
         print("Total testing took {:} (h:mm:ss)".format(model_utils.format_time(time.time()-total_t0)))
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model_type", help="The model type you wish to use", choices=["bilstm", "cbow"], default="bilstm")
+    parser.add_argument("--save_path", help="Directory to save model and model checkpoints into", default="./saved_model")
+    parser.add_argument("--test_path", help="Path to the test dataset jsonl file", default="./data/multinli_1.0/multinli_1.0_dev_mismatched.jsonl")
+    parser.add_argument("--batch_size", help="Batch size", type=int, default=32)
+    parser.add_argument("--emb_path", help="Path to the GloVe embeddings", default="./data/glove.840B.300d.txt")
+    parser.add_argument("--model_name", help="A custom name given to your model", required=True)
+    return check_args(parser.parse_args())
+
+def check_args(args):
+    assert args.batch_size >= 1
+    return args
+
+if __name__ == '__main__':
+    # Set numpy, tensorflow and python seeds for reproducibility.
+    torch.manual_seed(42)
+    np.random.seed(42)
+
+    args = parse_args()
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(device)
+
+    options = {}
+    save_path = f'{args.save_path}/'
+    model_name = args.model_type + "_" + args.model_name
+
+    print("Testing model..")
+    options = model_utils.load_model_config(save_path, model_name)
+    options['device'] = device
+    options['emb_path'] = args.emb_path
+    options['test_path'] = args.test_path
+    options['batch_size'] = args.batch_size
+    print(options)
+    tester = Tester(options)
+    tester.execute()
