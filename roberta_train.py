@@ -120,7 +120,7 @@ class RobertaTrain():
             label_dict = {'entailment': 1, 'non-entailment': 0}
         else:
             label_dict = {'entailment': 2, 'contradiction': 0, 'neutral': 1}
-        train_dataset = RobertaDatasetLoader(train_df.sample(1000), self.tokenizer, label_dict=label_dict)
+        train_dataset = RobertaDatasetLoader(train_df, self.tokenizer, label_dict=label_dict)
         train_data_loader = train_dataset.get_data_loaders(self.batch_size)
 
         val_df = load_utils.load_data(self.val_path)
