@@ -35,6 +35,7 @@ class RobertaTrain():
 
     def train(self, data_loader, optimizer, scheduler):
         self.model.train()
+        self.model.zero_grad()
         total_acc = 0
         total_loss = 0
 
@@ -44,7 +45,6 @@ class RobertaTrain():
             mask_ids = mask_ids.to(self.device)
             seg_ids = seg_ids.to(self.device)
             labels = y.to(self.device)
-            self.model.zero_grad()
 
             # prediction = model(pair_token_ids, mask_ids, seg_ids)
             result = self.model(pair_token_ids, 
@@ -54,11 +54,12 @@ class RobertaTrain():
                                         return_dict=True)
             
             loss = result.loss
+            loss = loss/self.gradient_accumulation
             logits = result.logits
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
-            if (batch_idx + 1) % self.gradient_accumulation == 0:
+            if ((batch_idx + 1) % self.gradient_accumulation == 0) or ((batch_idx + 1) == len(data_loader)):
                 optimizer.step()
+                self.model.zero_grad()
                 scheduler.step()
             logits = logits.detach().cpu().numpy()
             label_ids = labels.to('cpu').numpy()
