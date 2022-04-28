@@ -8,6 +8,7 @@ import util.model_utils as model_utils
 import argparse
 from transformers import AdamW, get_linear_schedule_with_warmup
 import util.load_utils as load_utils
+import os
 
 class RobertaTrain():
 
@@ -20,6 +21,7 @@ class RobertaTrain():
         self.epochs = options['epochs']
         self.save_path = options['save_path']
         self.num_classes = options['num_classes']
+        self.gradient_accumulation = options['gradient_accumulation']
         transformer = Transformer(self.model_name, classification_head=True, num_classes=self.num_classes)
         self.model, self.tokenizer = transformer.get_model_and_tokenizer()
         self.model.to(self.device)
@@ -33,16 +35,16 @@ class RobertaTrain():
 
     def train(self, data_loader, optimizer, scheduler):
         self.model.train()
+        self.model.zero_grad()
         total_acc = 0
         total_loss = 0
 
-        for (pair_token_ids, mask_ids, seg_ids, y) in tqdm(data_loader):
+        for batch_idx, (pair_token_ids, mask_ids, seg_ids, y) in enumerate(tqdm(data_loader)):
             # optimizer.zero_grad()
             pair_token_ids = pair_token_ids.to(self.device)
             mask_ids = mask_ids.to(self.device)
             seg_ids = seg_ids.to(self.device)
             labels = y.to(self.device)
-            self.model.zero_grad()
 
             # prediction = model(pair_token_ids, mask_ids, seg_ids)
             result = self.model(pair_token_ids, 
@@ -52,11 +54,13 @@ class RobertaTrain():
                                         return_dict=True)
             
             loss = result.loss
+            loss = loss/self.gradient_accumulation
             logits = result.logits
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
-            optimizer.step()
-            scheduler.step()
+            if ((batch_idx + 1) % self.gradient_accumulation == 0) or ((batch_idx + 1) == len(data_loader)):
+                optimizer.step()
+                self.model.zero_grad()
+                scheduler.step()
             logits = logits.detach().cpu().numpy()
             label_ids = labels.to('cpu').numpy()
                     
@@ -157,9 +161,15 @@ def parse_args():
     parser.add_argument("--save_path", help="Directory to save the model", default="./saved_model")
     parser.add_argument("--batch_size", help="Batch size", type=int, default=4)
     parser.add_argument("--epochs", help="Number of epochs", type=int, default=5)
+    parser.add_argument("--gradient_accumulation", help="Number of batches to accumulate gradients", type=int, default=2)
     parser.add_argument("--model_name", help="Name of the huggingface model or the path to the directory containing a pre-trained transformer", default="roberta-base")
     parser.add_argument("--num_classes", help="Number of output classes - RTE has 2, MNLI has 3", type=int, choices=[2, 3], default=2)
     return parser.parse_args()
+
+def create_path(path):
+    if not os.path.exists(path):
+        os.mkdir(path)
+        print ("Created a path: %s"%(path))
 
 if __name__ == '__main__':
     # Set numpy, tensorflow and python seeds for reproducibility.
@@ -170,6 +180,8 @@ if __name__ == '__main__':
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
+    save_path = f'{args.save_path}/'
+    create_path(save_path)
 
     options = {}
     options['batch_size'] = args.batch_size
@@ -180,6 +192,7 @@ if __name__ == '__main__':
     options['save_path'] = args.save_path
     options['epochs'] = args.epochs
     options['num_classes'] = args.num_classes
+    options['gradient_accumulation'] = args.gradient_accumulation
     print(options)
 
     roberta_trainer = RobertaTrain(options)
