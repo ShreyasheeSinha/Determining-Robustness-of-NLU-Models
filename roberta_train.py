@@ -25,6 +25,8 @@ class RobertaTrain():
         transformer = Transformer(self.model_name, classification_head=True, num_classes=self.num_classes)
         self.model, self.tokenizer = transformer.get_model_and_tokenizer()
         self.model.to(self.device)
+        self.train_data_loader = None
+        self.val_data_loader = None
     
     def flat_accuracy(self, preds, labels, val=False):
         pred_flat = np.argmax(preds, axis=1).flatten()
@@ -33,11 +35,12 @@ class RobertaTrain():
             pred_flat = np.where(pred_flat <= 1, 0, 1)
         return np.sum(pred_flat == labels_flat) / len(labels_flat)
 
-    def train(self, data_loader, optimizer, scheduler):
+    def train(self, optimizer, scheduler):
         self.model.train()
         self.model.zero_grad()
         total_acc = 0
         total_loss = 0
+        data_loader = self.train_data_loader
 
         for batch_idx, (pair_token_ids, mask_ids, seg_ids, y) in enumerate(tqdm(data_loader)):
             # optimizer.zero_grad()
@@ -61,6 +64,12 @@ class RobertaTrain():
                 optimizer.step()
                 self.model.zero_grad()
                 scheduler.step()
+            if (batch_idx + 1) % 10000 == 0:
+                train_acc = total_acc/(batch_idx + 1)
+                train_loss = total_loss/(batch_idx + 1)
+                val_acc, val_loss = self.test()
+                print(f'train_loss: {train_loss:.4f} train_acc: {train_acc:.4f} | val_loss: {val_loss:.4f} val_acc: {val_acc:.4f}')
+                self.model.train()
             logits = logits.detach().cpu().numpy()
             label_ids = labels.to('cpu').numpy()
                     
@@ -74,10 +83,11 @@ class RobertaTrain():
 
         return acc, loss
 
-    def test(self, data_loader):
+    def test(self):
         self.model.eval()
         total_acc = 0
         total_loss = 0
+        data_loader = self.val_data_loader
 
         with torch.no_grad():
             for (pair_token_ids, mask_ids, seg_ids, y) in tqdm(data_loader):
@@ -122,27 +132,27 @@ class RobertaTrain():
         else:
             label_dict = {'entailment': 2, 'contradiction': 0, 'neutral': 1}
         train_dataset = RobertaDatasetLoader(train_df, self.tokenizer, label_dict=label_dict)
-        train_data_loader = train_dataset.get_data_loaders(self.batch_size)
+        self.train_data_loader = train_dataset.get_data_loaders(self.batch_size)
 
         val_df = load_utils.load_data(self.val_path)
         val_df['gold_label'] = val_df['gold_label'].astype(int)
         val_dataset = RobertaDatasetLoader(val_df, self.tokenizer) # Validation is on RTE, hence there are 2 classes
-        val_data_loader = val_dataset.get_data_loaders(self.batch_size)
+        self.val_data_loader = val_dataset.get_data_loaders(self.batch_size)
 
         optimizer = AdamW(self.model.parameters(),
                 lr = 3e-5,#lr = 4e-5, # args.learning_rate - default is 5e-5
                 eps = 1e-8 # args.adam_epsilon  - default is 1e-8.
             )
 
-        total_steps = len(train_data_loader) * self.epochs
+        total_steps = len(self.train_data_loader) * self.epochs
 
         scheduler = get_linear_schedule_with_warmup(optimizer, 
                                                     num_warmup_steps = 1, # Default value in run_glue.py
                                                     num_training_steps = total_steps)
 
         for epoch_i in range(0, self.epochs):
-            train_acc, train_loss = self.train(train_data_loader, optimizer, scheduler)
-            val_acc, val_loss = self.test(val_data_loader)
+            train_acc, train_loss = self.train(optimizer, scheduler)
+            val_acc, val_loss = self.test()
 
             print(f'Epoch {epoch_i + 1}: train_loss: {train_loss:.4f} train_acc: {train_acc:.4f} | val_loss: {val_loss:.4f} val_acc: {val_acc:.4f}')
             if val_acc > last_best:
