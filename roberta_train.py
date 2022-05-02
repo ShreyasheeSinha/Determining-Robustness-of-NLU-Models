@@ -57,10 +57,15 @@ class RobertaTrain():
                                         return_dict=True)
             
             loss = result.loss
-            loss = loss/self.gradient_accumulation
+            if self.gradient_accumulation > 0:
+                loss = loss/self.gradient_accumulation
             logits = result.logits
             loss.backward()
-            if ((batch_idx + 1) % self.gradient_accumulation == 0) or ((batch_idx + 1) == len(data_loader)):
+            if self.gradient_accumulation == 0:
+                optimizer.step()
+                self.model.zero_grad()
+                scheduler.step()
+            elif ((batch_idx + 1) % self.gradient_accumulation == 0) or ((batch_idx + 1) == len(data_loader)):
                 optimizer.step()
                 self.model.zero_grad()
                 scheduler.step()
@@ -140,7 +145,7 @@ class RobertaTrain():
         self.val_data_loader = val_dataset.get_data_loaders(self.batch_size)
 
         optimizer = AdamW(self.model.parameters(),
-                lr = 3e-5,#lr = 4e-5, # args.learning_rate - default is 5e-5
+                lr = 3e-6,#lr = 4e-5, # args.learning_rate - default is 5e-5
                 eps = 1e-8 # args.adam_epsilon  - default is 1e-8.
             )
 
@@ -171,7 +176,7 @@ def parse_args():
     parser.add_argument("--save_path", help="Directory to save the model", default="./saved_model")
     parser.add_argument("--batch_size", help="Batch size", type=int, default=4)
     parser.add_argument("--epochs", help="Number of epochs", type=int, default=5)
-    parser.add_argument("--gradient_accumulation", help="Number of batches to accumulate gradients", type=int, default=2)
+    parser.add_argument("--gradient_accumulation", help="Number of batches to accumulate gradients", type=int, default=0)
     parser.add_argument("--model_name", help="Name of the huggingface model or the path to the directory containing a pre-trained transformer", default="roberta-base")
     parser.add_argument("--num_classes", help="Number of output classes - RTE has 2, MNLI has 3", type=int, choices=[2, 3], default=2)
     return parser.parse_args()
@@ -187,12 +192,13 @@ if __name__ == '__main__':
     np.random.seed(42)
 
     args = parse_args()
+    assert args.gradient_accumulation >= 0
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     save_path = f'{args.save_path}/'
     create_path(save_path)
-
+    
     options = {}
     options['batch_size'] = args.batch_size
     options['device'] = device
