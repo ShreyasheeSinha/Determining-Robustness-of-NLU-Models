@@ -113,7 +113,7 @@ class Trainer:
 
     def create_train_data(self):
         print("Creating training data..")
-        train_df = load_utils.load_data(self.train_path).sample(50, random_state=42)
+        train_df = load_utils.load_data(self.train_path)
         premises = train_df['sentence1'].to_list()
         hypotheses = train_df['sentence2'].to_list()
         if self.num_classes == 2:
@@ -134,7 +134,7 @@ class Trainer:
 
     def create_val_data(self):
         print("Creating validation data..")
-        val_df = load_utils.load_data(self.val_path).sample(50, random_state=42)
+        val_df = load_utils.load_data(self.val_path)
         val_df = val_df[val_df['gold_label'] != '-'] # The dataset has some entries with labels as '-'
         premises = val_df['sentence1'].to_list()
         hypotheses = val_df['sentence2'].to_list()
