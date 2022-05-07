@@ -13,6 +13,7 @@ import numpy as np
 import argparse
 import os
 import string
+from collections import Counter
 
 class Trainer:
 
@@ -32,6 +33,7 @@ class Trainer:
         self.seq_len = options['seq_len']
         self.num_classes = options['num_classes']
         self.vocab = None
+        self.vocab_size = options['vocab_size']
 
     def strip_punctuations(self, sentence):
         table = str.maketrans(dict.fromkeys(string.punctuation))
@@ -39,12 +41,18 @@ class Trainer:
         return new_s
 
     def build_vocab(self, premises, hypotheses):
-        self.vocab = Vocabulary()
+        self.vocab = Vocabulary(self.vocab_size)
         print("Building vocab..")
+        words = []
         for premise, hypothesis in tqdm(zip(premises, hypotheses), total=len(premises)):
-            self.vocab.add_sentence(self.strip_punctuations(premise).lower())
-            self.vocab.add_sentence(self.strip_punctuations(hypothesis).lower())
+            for token in self.strip_punctuations(premise).lower().split(' '):
+                words.append(token)
+            for token in self.strip_punctuations(hypothesis).lower().split(' '):
+                words.append(token)
 
+        vocab_words = Counter(words).most_common(self.vocab_size - 1)
+        for word, _ in vocab_words:
+            self.vocab.add_word(word)
         print("Vocab size:", str(self.vocab.get_vocab_size()))
         print("Saving vocab..")
         model_utils.save_vocab(self.save_path, self.vocab, self.model_name)
@@ -105,7 +113,7 @@ class Trainer:
 
     def create_train_data(self):
         print("Creating training data..")
-        train_df = load_utils.load_data(self.train_path)
+        train_df = load_utils.load_data(self.train_path).sample(50, random_state=42)
         premises = train_df['sentence1'].to_list()
         hypotheses = train_df['sentence2'].to_list()
         if self.num_classes == 2:
@@ -126,7 +134,7 @@ class Trainer:
 
     def create_val_data(self):
         print("Creating validation data..")
-        val_df = load_utils.load_data(self.val_path)
+        val_df = load_utils.load_data(self.val_path).sample(50, random_state=42)
         val_df = val_df[val_df['gold_label'] != '-'] # The dataset has some entries with labels as '-'
         premises = val_df['sentence1'].to_list()
         hypotheses = val_df['sentence2'].to_list()
@@ -260,6 +268,7 @@ def parse_args():
     parser.add_argument("--hidden_size", help="Hidden units in the LSTM", type=int, default=64)
     parser.add_argument("--stacked_layers", help="Number of stacked LSTM units", type=int, default=2)
     parser.add_argument("--seq_len", help="Maximum sequence length", type=int, default=50)
+    parser.add_argument("--vocab_size", help="The size of the vocabulary", type=int, default=50000)
     parser.add_argument("--num_classes", help="Number of output classes - RTE has 2, MNLI has 3", type=int, choices=[2, 3], default=2)
     return check_args(parser.parse_args())
 
@@ -303,6 +312,7 @@ if __name__ == '__main__':
     options['emb_path'] = args.emb_path
     options['batch_size'] = args.batch_size
     options['num_classes'] = args.num_classes
+    options['vocab_size'] = args.vocab_size
     options['learning_rate'] = 0.005 # TODO: Make this a CLI arg
     print(options)
     model_utils.save_model_config(save_path, model_name, options)
