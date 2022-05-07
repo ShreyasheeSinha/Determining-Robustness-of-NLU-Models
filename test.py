@@ -10,6 +10,7 @@ from tqdm import tqdm
 import numpy as np
 import argparse
 import string
+from sklearn.metrics import precision_score, recall_score, f1_score
 
 class Tester:
 
@@ -111,17 +112,26 @@ class Tester:
         return model
 
     def multi_acc(self, predictions, labels):
+        predictions = torch.log_softmax(predictions, dim=1).argmax(dim=1)
         if self.num_classes == 3:
-            predictions = torch.log_softmax(predictions, dim=1).argmax(dim=1)
             two_class_predictions = torch.where(predictions <= 1, 0, 1) # Collapse neutral and contradiction into a single class 0, entailment becomes class 1
             acc = (two_class_predictions == labels).sum().float() / float(labels.size(0))
+            precision = precision_score(labels.to('cpu').numpy(), two_class_predictions.to('cpu').numpy(), zero_division=0)
+            recall = recall_score(labels.to('cpu').numpy(), two_class_predictions.to('cpu').numpy(), zero_division=0)
+            f1 = f1_score(labels.to('cpu').numpy(), two_class_predictions.to('cpu').numpy(), zero_division=0)
         else:
-            acc = (torch.log_softmax(predictions, dim=1).argmax(dim=1) == labels).sum().float() / float(labels.size(0))
-        return acc
+            acc = (predictions == labels).sum().float() / float(labels.size(0))
+            precision = precision_score(labels.to('cpu').numpy(), predictions.to('cpu').numpy(), zero_division=0)
+            recall = recall_score(labels.to('cpu').numpy(), predictions.to('cpu').numpy(), zero_division=0)
+            f1 = f1_score(labels.to('cpu').numpy(), predictions.to('cpu').numpy(), zero_division=0)
+        return acc, precision, recall, f1
 
     def test(self, test_data, model, criterion):
         model.eval()
         total_test_acc  = 0
+        total_test_precision = 0
+        total_test_recall = 0
+        total_test_f1 = 0
         total_test_loss = 0
         with torch.no_grad():
             for premises, premise_mask, hypotheses, hypothesis_mask, labels in tqdm(test_data):
@@ -133,15 +143,21 @@ class Tester:
                 predictions = model(premises, premise_mask, hypotheses, hypothesis_mask)
 
                 loss = criterion(predictions, labels)
-                acc  = self.multi_acc(predictions, labels)
+                acc, precision, recall, f1  = self.multi_acc(predictions, labels)
 
                 total_test_loss += loss.item()
                 total_test_acc  += acc.item()
+                total_test_precision += precision
+                total_test_recall += recall
+                total_test_f1 += f1
 
         test_acc = total_test_acc/len(test_data)
         test_loss = total_test_loss/len(test_data)
+        test_precision = total_test_precision/len(test_data)
+        test_recall = total_test_recall/len(test_data)
+        test_f1 = total_test_f1/len(test_data)
 
-        return test_acc, test_loss
+        return test_acc, test_precision, test_recall, test_f1, test_loss
 
     def execute(self):
         total_t0 = time.time()
@@ -153,8 +169,8 @@ class Tester:
 
         model.load_state_dict(model_info['model_state_dict'])
 
-        test_acc, test_loss = self.test(test_data, model, criterion)
-        print(f'test_loss: {test_loss:.4f} test_acc: {test_acc:.4f}')
+        test_acc, test_precision, test_recall, test_f1, test_loss = self.test(test_data, model, criterion)
+        print(f'test_acc: {test_acc:.4f} test_precision: {test_precision:.4f} test_recall: {test_recall:.4f} test_f1: {test_f1:.4f}')
 
         print("Testing complete!")
         print("Total testing took {:} (h:mm:ss)".format(model_utils.format_time(time.time()-total_t0)))
