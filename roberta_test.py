@@ -7,6 +7,7 @@ import time
 import util.model_utils as model_utils
 import argparse
 import util.load_utils as load_utils
+from sklearn.metrics import precision_score, recall_score, f1_score
 
 class RobertaTest():
 
@@ -25,12 +26,19 @@ class RobertaTest():
         labels_flat = labels.flatten()
         if output_shape == 3:
             pred_flat = np.where(pred_flat <= 1, 0, 1)
-        return np.sum(pred_flat == labels_flat) / len(labels_flat)
+        acc = np.sum(pred_flat == labels_flat) / len(labels_flat)
+        precision = precision_score(labels_flat, pred_flat, zero_division=0)
+        recall = recall_score(labels_flat, pred_flat, zero_division=0)
+        f1 = f1_score(labels_flat, pred_flat, zero_division=0)
+        return acc, precision, recall, f1
 
     def test(self, data_loader):
         self.model.eval()
         total_acc = 0
         total_loss = 0
+        total_precision = 0
+        total_recall = 0
+        total_f1 = 0
 
         with torch.no_grad():
             for (pair_token_ids, mask_ids, seg_ids, y) in tqdm(data_loader):
@@ -54,16 +62,22 @@ class RobertaTest():
                 label_ids = labels.to('cpu').numpy()
                     
                     # loss = criterion(prediction, labels)
-                acc = self.flat_accuracy(logits, label_ids)
+                acc, precision, recall, f1 = self.flat_accuracy(logits, label_ids)
                 # print(acc, loss)
 
                 total_loss += loss.item()
                 total_acc  += acc
+                total_precision += precision
+                total_recall += recall
+                total_f1 += f1
         
         acc  = total_acc/len(data_loader)
+        precision = total_precision/len(data_loader)
+        recall = total_recall/len(data_loader)
+        f1 = total_f1/len(data_loader)
         loss = total_loss/len(data_loader)
 
-        return acc, loss
+        return acc, precision, recall, f1, loss
         
     def execute(self):
         total_t0 = time.time()
@@ -73,9 +87,9 @@ class RobertaTest():
         dataset = RobertaDatasetLoader(test_df, self.tokenizer)
         data_loader = dataset.get_data_loaders(self.batch_size)
 
-        test_acc, test_loss = self.test(data_loader)
+        test_acc, test_precision, test_recall, test_f1, test_loss = self.test(data_loader)
 
-        print(f'test_loss: {test_loss:.4f} test_acc: {test_acc:.4f}')
+        print(f'test_acc: {test_acc:.4f} test_precision: {test_precision:.4f} test_recall: {test_recall:.4f} test_f1: {test_f1:.4f}')
 
         print("Testing complete!")
         print("Total testing took {:} (h:mm:ss)".format(model_utils.format_time(time.time()-total_t0)))
