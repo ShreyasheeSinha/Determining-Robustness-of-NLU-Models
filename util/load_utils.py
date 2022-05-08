@@ -6,6 +6,7 @@ def get_coefs(word, *arr):
     return word, np.asarray(arr, dtype='float32')
 
 def load_embeddings(path):
+    print("Loading embeddings...")
     with open(path) as f:
         return dict(get_coefs(*line.strip().split(' ')) for line in f)
 

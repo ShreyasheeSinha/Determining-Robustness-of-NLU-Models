@@ -6,25 +6,22 @@ the model in the future.
 """
 
 class Vocabulary:
-    def __init__(self):
+    def __init__(self, vocab_size):
         UNK_TOKEN = "@UNK@"
         self.word2index = {UNK_TOKEN: 1}
-        self.word2count = {}
         self.index2word = {1: UNK_TOKEN}
         self.n_words = 1
+        self.vocab_size = vocab_size
 
-    def add_sentence(self, sentence):
-        for word in sentence.split(' '):
-            self.add_word(word)
+    # def add_sentence(self, sentence):
+    #     for word in sentence.split(' '):
+    #         self.add_word(word)
 
     def add_word(self, word):
         if word not in self.word2index:
             self.word2index[word] = self.n_words + 1
-            self.word2count[word] = 1
             self.index2word[self.n_words + 1] = word
             self.n_words += 1
-        else:
-            self.word2count[word] += 1
     
     def get_index(self, word):
         if word in self.word2index:
@@ -34,9 +31,6 @@ class Vocabulary:
     def get_word(self, index):
         return self.index2word[index]
 
-    def get_word_count(self, word):
-        return self.word2count[word]
-
     def get_word2index(self):
         return self.word2index
 
@@ -44,4 +38,4 @@ class Vocabulary:
         return self.index2word
     
     def get_vocab_size(self):
-        return self.n_words
+        return self.vocab_size
