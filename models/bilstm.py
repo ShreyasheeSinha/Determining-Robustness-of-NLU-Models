@@ -7,7 +7,7 @@ import torch.nn as nn
 
 class BiLSTM(nn.Module):
 
-    def __init__(self, hidden_size, stacked_layers, weights_matrix, device, dropout=0.2, num_classes=2):
+    def __init__(self, hidden_size, stacked_layers, weights_matrix, device, dropout=0.2, num_classes=2, is_hypothesis_only=False):
         super(BiLSTM, self).__init__()
         self.directions = 2
         self.num_layers = 2
@@ -15,6 +15,7 @@ class BiLSTM(nn.Module):
         self.device = device
         self.hidden_size = hidden_size
         self.stacked_layers = stacked_layers
+        self.is_hypothesis_only = is_hypothesis_only
 
         num_embeddings, embedding_dim = weights_matrix.shape[0], weights_matrix.shape[1]
         self.embedding = nn.Embedding(num_embeddings, embedding_dim)
@@ -25,7 +26,10 @@ class BiLSTM(nn.Module):
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(p = dropout)
 
-        self.lin1 = nn.Linear(self.hidden_size * self.concat, self.hidden_size)
+        if not self.is_hypothesis_only:
+            self.lin1 = nn.Linear(self.hidden_size * self.concat, self.hidden_size)
+        else:
+            self.lin1 = nn.Linear(self.hidden_size, self.hidden_size)
         self.lin2 = nn.Linear(self.hidden_size, self.hidden_size)
         self.lin3 = nn.Linear(self.hidden_size, num_classes)
 
@@ -54,9 +58,13 @@ class BiLSTM(nn.Module):
         return hidden
 
     def forward(self, premises, premise_mask, hypotheses, hypothesis_mask):
-        premise = self.forward_once(premises, premise_mask)
+        if not self.is_hypothesis_only:
+            premise = self.forward_once(premises, premise_mask)
         hypothesis = self.forward_once(hypotheses, hypothesis_mask)
 
-        combined_outputs  = torch.cat((premise, hypothesis, torch.abs(premise - hypothesis), premise * hypothesis), dim=2)
+        if not self.is_hypothesis_only:
+            combined_outputs  = torch.cat((premise, hypothesis, torch.abs(premise - hypothesis), premise * hypothesis), dim=2)
+        else:
+            combined_outputs = hypothesis
 
         return self.out(combined_outputs[-1])

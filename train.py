@@ -34,6 +34,7 @@ class Trainer:
         self.num_classes = options['num_classes']
         self.vocab = None
         self.vocab_size = options['vocab_size']
+        self.is_hypothesis_only = options['is_hypothesis_only']
 
     def strip_punctuations(self, sentence):
         table = str.maketrans(dict.fromkeys(string.punctuation))
@@ -45,8 +46,9 @@ class Trainer:
         print("Building vocab..")
         words = []
         for premise, hypothesis in tqdm(zip(premises, hypotheses), total=len(premises)):
-            for token in self.strip_punctuations(premise).lower().split(' '):
-                words.append(token)
+            if not self.is_hypothesis_only:
+                for token in self.strip_punctuations(premise).lower().split(' '):
+                    words.append(token)
             for token in self.strip_punctuations(hypothesis).lower().split(' '):
                 words.append(token)
 
@@ -77,20 +79,21 @@ class Trainer:
         for premise, hypothesis in tqdm(zip(premises, hypotheses), total=len(premises)):
             indices = []
             masks = []
-            premise_tokens = premise.split(' ')
-            for i in range(self.seq_len):
-                if i >= len(premise_tokens):
-                    indices.append(0) # Append padding
-                    masks.append(0)
-                else:
-                    w = premise_tokens[i]
-                    if self.vocab.get_index(w):
-                        indices.append(self.vocab.get_index(w))
+            if not self.is_hypothesis_only:
+                premise_tokens = premise.split(' ')
+                for i in range(self.seq_len):
+                    if i >= len(premise_tokens):
+                        indices.append(0) # Append padding
+                        masks.append(0)
                     else:
-                        indices.append(1) # UNK token index
-                    masks.append(1)
-            premise_indices.append(indices)
-            premise_masks.append(masks)
+                        w = premise_tokens[i]
+                        if self.vocab.get_index(w):
+                            indices.append(self.vocab.get_index(w))
+                        else:
+                            indices.append(1) # UNK token index
+                        masks.append(1)
+                premise_indices.append(indices)
+                premise_masks.append(masks)
             
             indices = []
             masks = []
@@ -125,8 +128,8 @@ class Trainer:
 
         premise_indices, premise_masks, hypothesis_indices, hypothesis_masks = self.convert_to_indices(premises, hypotheses)
         label_indices = self.labels_to_indices(labels)
-
-        train_data = DataSetLoader(np.array(premise_indices), np.array(premise_masks), np.array(hypothesis_indices), np.array(hypothesis_masks), np.array(label_indices))
+        
+        train_data = DataSetLoader(np.array(premise_indices), np.array(premise_masks), np.array(hypothesis_indices), np.array(hypothesis_masks), np.array(label_indices), is_hypothesis_only=self.is_hypothesis_only)
 
         train_loader = torch.utils.data.DataLoader(train_data, batch_size=self.batch_size, shuffle=True)
 
@@ -143,7 +146,7 @@ class Trainer:
 
         premise_indices, premise_masks, hypothesis_indices, hypothesis_masks = self.convert_to_indices(premises, hypotheses)
 
-        val_data = DataSetLoader(np.array(premise_indices), np.array(premise_masks), np.array(hypothesis_indices), np.array(hypothesis_masks), np.array(label_indices))
+        val_data = DataSetLoader(np.array(premise_indices), np.array(premise_masks), np.array(hypothesis_indices), np.array(hypothesis_masks), np.array(label_indices), is_hypothesis_only=self.is_hypothesis_only)
 
         val_loader = torch.utils.data.DataLoader(val_data, batch_size=self.batch_size, shuffle=True)
 
@@ -154,9 +157,9 @@ class Trainer:
         embedding_matrix = model_utils.create_embedding_matrix(embeddings_index, 300, self.vocab)
 
         if self.model_type == 'bilstm':
-            model = BiLSTM(hidden_size=self.hidden_size, stacked_layers=self.stacked_layers, weights_matrix=embedding_matrix, device=self.device, num_classes=self.num_classes)
+            model = BiLSTM(hidden_size=self.hidden_size, stacked_layers=self.stacked_layers, weights_matrix=embedding_matrix, device=self.device, num_classes=self.num_classes, is_hypothesis_only=self.is_hypothesis_only)
         elif self.model_type == 'cbow':
-            model = CBOW(weights_matrix=embedding_matrix, num_classes=self.num_classes)
+            model = CBOW(weights_matrix=embedding_matrix, num_classes=self.num_classes, is_hypothesis_only=self.is_hypothesis_only)
 
         model.to(self.device)
         print(model)
@@ -175,8 +178,10 @@ class Trainer:
         model.train()
         total_train_loss = 0
         total_train_acc  = 0
-        for premises, premise_mask, hypotheses, hypothesis_mask, labels in tqdm(train_data):
-            premises = premises.to(self.device)
+        for batch in tqdm(train_data):
+            premises, premise_mask, hypotheses, hypothesis_mask, labels = batch
+            if not self.is_hypothesis_only:
+                premises = premises.to(self.device)
             hypotheses = hypotheses.to(self.device)
             labels = labels.to(self.device)
             
@@ -202,8 +207,10 @@ class Trainer:
         total_val_acc  = 0
         total_val_loss = 0
         with torch.no_grad():
-            for premises, premise_mask, hypotheses, hypothesis_mask, labels in tqdm(val_data):
-                premises = premises.to(self.device)
+            for batch in tqdm(val_data):
+                premises, premise_mask, hypotheses, hypothesis_mask, labels = batch
+                if not self.is_hypothesis_only:
+                    premises = premises.to(self.device)
                 hypotheses = hypotheses.to(self.device)
                 labels = labels.to(self.device)
                 
@@ -270,6 +277,7 @@ def parse_args():
     parser.add_argument("--seq_len", help="Maximum sequence length", type=int, default=50)
     parser.add_argument("--vocab_size", help="The size of the vocabulary", type=int, default=50000)
     parser.add_argument("--num_classes", help="Number of output classes - RTE has 2, MNLI has 3", type=int, choices=[2, 3], default=2)
+    parser.add_argument("--is_hypothesis_only", action='store_true')
     return check_args(parser.parse_args())
 
 def check_args(args):
@@ -281,7 +289,7 @@ def check_args(args):
 
 def create_path(path):
     if not os.path.exists(path):
-        os.mkdir(path)
+        os.makedirs(path)
         print ("Created a path: %s"%(path))
 
 if __name__ == '__main__':
@@ -314,6 +322,7 @@ if __name__ == '__main__':
     options['num_classes'] = args.num_classes
     options['vocab_size'] = args.vocab_size
     options['learning_rate'] = 0.005 # TODO: Make this a CLI arg
+    options['is_hypothesis_only'] = args.is_hypothesis_only
     print(options)
     model_utils.save_model_config(save_path, model_name, options)
     trainer = Trainer(options)
