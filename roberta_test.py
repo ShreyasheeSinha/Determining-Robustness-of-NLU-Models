@@ -16,6 +16,7 @@ class RobertaTest():
         self.device = options['device']
         self.test_path = options['test_path']
         self.batch_size = options['batch_size']
+        self.is_hypothesis_only = options['is_hypothesis_only']
         transformer = Transformer(self.model_name)
         self.model, self.tokenizer = transformer.get_model_and_tokenizer()
         self.model.to(self.device)
@@ -84,7 +85,7 @@ class RobertaTest():
 
         test_df = load_utils.load_data(self.test_path)
         test_df['gold_label'] = test_df['gold_label'].astype(int)
-        dataset = RobertaDatasetLoader(test_df, self.tokenizer)
+        dataset = RobertaDatasetLoader(test_df, self.tokenizer, is_hypothesis_only=self.is_hypothesis_only)
         data_loader = dataset.get_data_loaders(self.batch_size)
 
         test_acc, test_precision, test_recall, test_f1, test_loss = self.test(data_loader)
@@ -99,6 +100,7 @@ def parse_args():
     parser.add_argument("--test_path", help="Path to the test dataset jsonl file", default="./data/multinli_1.0/multinli_1.0_dev_mismatched.jsonl") # TODO: Add proper path
     parser.add_argument("--batch_size", help="Batch size", type=int, default=32)
     parser.add_argument("--model_name", help="Name of the huggingface model or the path to the directoy containing a pre-trained transformer", default="roberta-large-mnli")
+    parser.add_argument("--is_hypothesis_only", action='store_true')
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -116,6 +118,7 @@ if __name__ == '__main__':
     options['device'] = device
     options['test_path'] = args.test_path
     options['model_name'] = args.model_name
+    options['is_hypothesis_only'] = args.is_hypothesis_only
     print(options)
 
     roberta_tester = RobertaTest(options)
