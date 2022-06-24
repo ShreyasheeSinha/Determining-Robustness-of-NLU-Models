@@ -1,0 +1,548 @@
+<!-- Bootstrap v3.0.3 -->
+<link href="https://s3.amazonaws.com/mturk-public/bs30/css/bootstrap.min.css" rel="stylesheet" />
+<style type="text/css">.main-section {
+        margin-bottom: 15px;
+        padding: 10px 10px;
+    }
+    .sentence {
+        font-weight: bold;
+    }
+    .hidden {
+        display: none;
+    }
+    h1 {
+        background-color: #ffbbff !important;
+        color: black;
+        padding: 0.25em;
+        font-size: 32px;
+        font-weight: bold;
+    }
+    h2 {
+        font-size: 24px;
+        font-weight: bold;
+    }
+    div {
+        font-size: 16px;
+    }
+    p {
+        font-size: 16px;
+    }
+    body * {
+        font-family: sans-serif, Verdana, Geneva;
+    }
+    .panel {
+        border: none;
+    }
+    .panel-primary {
+        border: none;
+        width: 700px;
+    }
+
+    .label {
+        font-size: 16px;
+    }
+    .blue{color: #0000FF;}
+    .red{color: #FF0000;}
+    .grey{color: #777777;}
+    .instr * {}
+
+    .emph {
+        font-weight: bold;
+    }
+    .form-control {}
+
+    input[type="checkbox"] + label {
+        display: inline-block;
+        width: 25px;
+        height: 25px;
+        background-color: #ffffff;
+        cursor: pointer;
+        border: 2px solid #444444;
+        border-radius: 3px;
+        margin-right: 25px;
+    }
+
+    input[type="checkbox"]:checked + label {
+        background-color: #999999;
+    }
+
+    .slidecontainer {
+        text-align: center;
+        width: 100%; /* Width of the outside container */
+    }
+
+    .slider {
+        -webkit-appearance: none;  /* Override default CSS styles */
+        appearance: none;
+        width: 40%; /* Full-width */
+        height: 10px; /* Specified height */
+        background: #b4b4b4; /* Grey background */
+        outline: none; /* Remove outline */
+        opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+        -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+        transition: opacity .2s;
+    }
+
+    /* Mouse-over effects */
+    .slider:hover {
+        opacity: 1; /* Fully shown on mouse-over */
+    }
+
+    /* The slider handle (use webkit (Chrome, Opera, Safari, Edge) and moz (Firefox) to override default look) */
+    .slider::-webkit-slider-thumb {
+        -webkit-appearance: none; /* Override default look */
+        appearance: none;
+        width: 25px; /* Set a specific slider handle width */
+        height: 25px; /* Slider handle height */
+        background: #ffffff; /* Green background */
+        border: 2px solid #444444;
+        border-radius: 3px;
+        cursor: pointer; /* Cursor on hover */
+    }
+
+    .slider::-moz-range-thumb {
+        width: 25px; /* Set a specific slider handle width */
+        height: 25px; /* Slider handle height */
+        background: #ffffff; /* Green background */
+        border: 2px solid #cc00cc;
+        border-radius: 3px;
+        cursor: pointer; /* Cursor on hover */
+    }
+
+    .disabled-slider {
+        -webkit-appearance: none;  /* Override default CSS styles */
+        appearance: none;
+        width: 40%; /* Full-width */
+        height: 10px; /* Specified height */
+        background: #b4b4b4; /* Grey background */
+        outline: none; /* Remove outline */
+        opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+        -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+        transition: opacity .2s;
+    }
+
+    /* The slider handle (use webkit (Chrome, Opera, Safari, Edge) and moz (Firefox) to override default look) */
+    .disabled-slider::-webkit-slider-thumb {
+        -webkit-appearance: none; /* Override default look */
+        appearance: none;
+        width: 0; /* Set a specific slider handle width */
+        height: 0; /* Slider handle height */
+        background: #ffffff; /* Green background */
+        border: 0;
+    }
+
+    .disabled-slider::-moz-range-thumb {
+        width: 0; /* Set a specific slider handle width */
+        height: 0; /* Slider handle height */
+        background: #ffffff; /* Green background */
+        border: 0;
+    }
+</style>
+<script src="https://code.jquery.com/jquery-3.3.1.js"
+    integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60="
+    crossorigin="anonymous"></script><script type="text/javascript">
+    function toggleExamples(){
+        if ((document.getElementById("examples").style.display) =="block"){
+            document.getElementById("examples").style.display="none";
+        }
+        else{
+            document.getElementById("examples").style.display="block";
+        }
+    }
+
+    function toggleSlider(sliderNum) {
+        var sliderInput = document.getElementById("slide" + sliderNum);
+        if (document.getElementById("gm" + sliderNum + "_1").checked) {
+            sliderInput.disabled = true;
+            sliderInput.className = "disabled-slider";
+            updateSlider("N/A", sliderNum);
+        } else {
+            sliderInput.disabled = false;
+            sliderInput.className = "slider";
+            updateSlider(sliderInput.value, sliderNum);
+        }
+    }
+
+    function updateSlider(slideAmount, sliderNum) {
+        var scoreDiv = document.getElementById("myRange" + sliderNum);
+        scoreDiv.innerHTML = slideAmount;
+    }
+
+    var utf8ByteArrayToString = function(bytes) {
+      var out = [], pos = 0, c = 0;
+      while (pos < bytes.length) {
+        var c1 = bytes[pos++];
+        if (c1 < 128) {
+          out[c++] = String.fromCharCode(c1);
+        } else if (c1 > 191 && c1 < 224) {
+          var c2 = bytes[pos++];
+          out[c++] = String.fromCharCode((c1 & 31) << 6 | c2 & 63);
+        } else if (c1 > 239 && c1 < 365) {
+          // Surrogate Pair
+          var c2 = bytes[pos++];
+          var c3 = bytes[pos++];
+          var c4 = bytes[pos++];
+          var u = ((c1 & 7) << 18 | (c2 & 63) << 12 | (c3 & 63) << 6 | c4 & 63) -
+                  0x10000;
+          out[c++] = String.fromCharCode(0xD800 + (u >> 10));
+          out[c++] = String.fromCharCode(0xDC00 + (u & 1023));
+        } else {
+          var c2 = bytes[pos++];
+          var c3 = bytes[pos++];
+          out[c++] =
+            String.fromCharCode((c1 & 15) << 12 | (c2 & 63) << 6 | c3 & 63);
+        }
+      }
+      return out.join('');
+    };
+
+    function displayEmoji() {
+      $(this).text(utf8ByteArrayToString(JSON.parse($(this).attr('data-emoji-bytes'))));
+    }
+    function toggleInstructions() {
+      if ($('#toggle_instructions').html() == "Show the instructions (<strong>Please click&nbsp;if&nbsp;this is your first time</strong>)") {
+        $('#toggle_instructions').html("Hide the instructions");
+        $('#instruction_content').show();
+      } else {
+        $('#toggle_instructions').html("Show the instructions (<strong>Please click&nbsp;if&nbsp;this is your first time</strong>)");
+        $('#instruction_content').hide();
+      }
+    }
+    $( document ).ready(function() {
+      $('span.emoji-bytes').each(displayEmoji);
+    });
+</script>
+<section class="container main-section">
+<div class="row col-xs-12 col-md-12">
+<div class="panel panel-primary">
+<div class="panel panel-primary" style="border-width: 0px; border-style: solid; border-color: rgb(255, 255, 255);">
+<h2 border-image:="" border-left-style:="" border-right-style:="" border-top-style:="" border-width:="" class="panel-heading" helvetica="" style="font-size: 25px; text-align: center;"><strong><span style="color: rgb(12, 37, 40);">Meaning similarity judgement</span></strong></h2>
+
+<p><span id="toggle_instructions" onclick="toggleInstructions()" style="color:blue;font-size:16px;cursor:hand;border-bottom:1px solid">Show the instructions (<strong>Please click&nbsp;if&nbsp;this is your first time</strong>)</span></p>
+
+<div id="instruction_content" style="display: none">&nbsp;
+<h2>Instructions</h2>
+
+<div class="panel-body" style="font-size: 13px;">
+<p class="instr" style="font-size: 15px; line-height: 20px; width: 640px;"><span style="font-size: 15px;">Thank you for participating&nbsp;</span>in this HIT! You will evaluate how closely one sentence matches the meaning of another sentence. The goal is to improve&nbsp;comprehension of languages by computers: your assistance is crucial&nbsp;to&nbsp;building better&nbsp;technologies behind services like Amazon Alexa, Apple Siri, or Google Translate.</p>
+
+<p class="instr" style="font-size: 15px; line-height: 20px; width: 640px;">You will be presented with a "reference" sentence&nbsp;and&nbsp;3 other sentences.&nbsp; <u><strong>On a scale of 0 to 100, we would like you to evaluate how closely a&nbsp;sentence matches the&nbsp;meaning of the reference.</strong></u>&nbsp;</p>
+
+<p class="instr" style="font-size: 15px; line-height: 20px; width: 640px;">A sentence with a score of 100 means it has an <em><u><strong>"identical meaning"</strong></u></em> to the reference sentence <strong>(<u>it may even be the original sentence itself!)</u></strong>&nbsp;A score of 0 means the meaning of the sentence is irrelevant or contradicting to the reference.</p>
+
+<p class="instr" style="font-size: 15px; line-height: 20px; width: 640px;">Rarely, the sentences&nbsp;may contain materials some readers&nbsp;find offensive. If this&nbsp;happens, please mark it via the provided checkbox. We believe all or almost all of the sentences do not require this option.</p>
+</div>
+
+<h2>How do I measure meaning?</h2>
+
+<div class="panel-body" style="">
+<p class="instr" style="font-size: 15px; line-height: 20px; width: 640px;">The following are example&nbsp;sentence pairs&nbsp;and suggested scores.</p>
+
+<ul style="">
+	<li class="instr" style="font-size: 16px; line-height: 20px; width: 640px;">The following sentence pairs have&nbsp;<u>nearly or exactly the same meaning</u>, expressed with <u>nearly identical or identical language</u>.</li>
+	<li class="instr" style="font-size: 16px; line-height: 20px; width: 640px;"><span style="color:#B22222;"><u><strong><em>***We judge the quality of your work partly based on if sentences completely identical to the reference receive a perfect score, so please make sure to give them 100.&nbsp;</em></strong></u></span>
+	<ul style="">
+		<li class="instr" style="line-height: 20px; width: 640px;"><code>the student was hugged by the teacher</code></li>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code>the student was&nbsp;hugged by the teacher</code></li>
+		<li>----------------------------------------------------------------------------</li>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code>the student was hugged by the teacher</code></li>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code>the teacher hugged the student</code></li>
+	</ul>
+
+	<div class="slidecontainer">
+	<p class="emph">Score: 100</p>
+	<span class="label red">Opposite/Irrelevant</span> <input class="slider" disabled="true" id="slider_dummy1" max="100" min="0" type="range" value="100" /> <span class="label blue">Identical Meaning</span></div>
+	</li>
+</ul>
+
+<p class="instr" style="font-size: 15px; line-height: 20px; width: 640px;">&nbsp;</p>
+
+<ul style="">
+	<li class="instr" style="font-size: 16px; line-height: 20px; width: 640px;">In the&nbsp;following&nbsp;example, most of the meaning is shared, and&nbsp;most people would agree <u>the new sentence means the same, or almost&nbsp;the same thing</u> as the reference:
+
+	<ul>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code>the student was hugged by the teacher</code></li>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code>the student was&nbsp;embraced by the teacher</code></li>
+		<li>----------------------------------------------------------------------------</li>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code>the student was hugged by the teacher</code></li>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code>the student was hugged by the instructor</code></li>
+	</ul>
+
+	<div class="slidecontainer">
+	<p class="emph">Score: 92</p>
+	<span class="label red">Opposite/Irrelevant</span> <input class="slider" disabled="true" id="slider_dummy2" max="100" min="0" type="range" value="92" /> <span class="label blue">Identical Meaning</span></div>
+	</li>
+</ul>
+
+<p class="instr" style="line-height: 20px; width: 640px;">&nbsp;</p>
+
+<ul style="">
+	<li class="instr" style="font-size: 16px; line-height: 20px; width: 640px;">In the following examples, the sentence may contain some of the same words&nbsp;in the reference, but they mean <u>completely different things</u>:
+
+	<ul>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code>the student was hugged by the teacher</code></li>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code>the teacher yelled at the student</code></li>
+		<li>----------------------------------------------------------------------------</li>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code>the student was hugged by the teacher</code></li>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code>the student was not hugged by the teacher</code></li>
+	</ul>
+
+	<div class="slidecontainer">
+	<p class="emph">Score: 0</p>
+	<span class="label red">Opposite/Irrelevant</span> <input class="slider" disabled="true" id="slider_dummy3" max="100" min="0" type="range" value="0" /> <span class="label blue">Identical Meaning</span></div>
+	</li>
+</ul>
+
+<p class="instr" style="line-height: 20px; width: 640px;">&nbsp;</p>
+
+<ul style="">
+	<li class="instr" style="line-height: 20px; width: 640px;">Another such example<span style="font-size: 15px;">:</span>
+
+	<ul>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code style="font-size: 15px;">the student was hugged by the teacher</code></li>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code style="font-size: 15px;">the food was pretty good​</code></li>
+	</ul>
+
+	<div class="slidecontainer">
+	<p class="emph">Score: 0</p>
+	<span class="label red">Opposite/Irrelevant</span> <input class="slider" disabled="true" id="slider_dummy4" max="100" min="0" type="range" value="0" /> <span class="label blue">Identical Meaning</span></div>
+	</li>
+</ul>
+
+<p class="instr" style="line-height: 20px; width: 640px;">&nbsp;</p>
+
+<p class="instr" style="line-height: 20px; width: 640px;">One way to interpret "meaning the same thing" is whether the new sentence could <u>plausibly be used to describe the same thing</u> as the reference (<span style="color:#0000FF;"><strong>Identical Meaning</strong></span>), and whether the new sentence could be used to <u>describe something contradicting or unrelated</u>&nbsp;to the reference (<span style="color:#FF0000;"><strong>Opposite/Irrelevant</strong></span>).&nbsp;</p>
+
+<p class="instr" style="line-height: 20px; width: 640px;">&nbsp;</p>
+
+<ul style="">
+	<li class="instr" style="line-height: 20px; width: 640px;"><span style="font-size: 16px;">The following sentence pair is <u>related in meaning</u>, but not identical. Thus, the&nbsp;sentence&nbsp;gets a score between 0 and 100.&nbsp;Your judgement of the similarity between the sentence pair might be different from ours: this is <strong><u><em>OK</em></u></strong>!&nbsp;</span></li>
+	<li class="instr" style="line-height: 20px; width: 640px;"><u style="font-size: 16px;">Please use your best judgement&nbsp;and <strong>aim for consistency</strong> across your HITs<em>.</em></u>
+	<ul>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code>the student was hugged by the teacher</code></li>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code>the person&nbsp;embraced the student​</code></li>
+	</ul>
+
+	<div class="slidecontainer">
+	<p class="emph">Score: 60</p>
+	<span class="label red">Opposite/Irrelevant</span> <input class="slider" disabled="true" id="slider_dummy5" max="100" min="0" type="range" value="60" /> <span class="label blue">Identical Meaning</span></div>
+	</li>
+</ul>
+
+<p class="instr" style="line-height: 20px; width: 640px;">&nbsp;</p>
+
+<ul style="">
+	<li class="instr" style="line-height: 20px; width: 640px;">Another example of <u>similar but not identical in meaning</u>, where this new sentence seems to be <strong><em>less identical in meaning</em></strong> than in the previous example, and therefore is assigned a lower score.&nbsp;
+
+	<ul>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code>the student was hugged by the teacher</code></li>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code>the person touched the student​</code></li>
+	</ul>
+
+	<div class="slidecontainer">
+	<p class="emph">Score: 45</p>
+	<span class="label red">Opposite/Irrelevant</span> <input class="slider" disabled="true" id="slider_dummy6" max="100" min="0" type="range" value="45" /> <span class="label blue">Identical Meaning</span></div>
+	</li>
+</ul>
+
+<p class="instr" style="line-height: 20px; width: 640px;">&nbsp;</p>
+
+<ul style="">
+	<li class="instr" style="line-height: 20px; width: 640px;">The following is <u>even less similar</u> in meaning:
+
+	<ul>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code style="font-size: 15px;">the student was hugged by the teacher</code></li>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code style="font-size: 15px;">A person touched something​</code></li>
+	</ul>
+
+	<div class="slidecontainer">
+	<p class="emph">Score: 20</p>
+
+	<p><span class="label red">Opposite/Irrelevant</span> <input class="slider" disabled="true" id="slider_dummy7" max="100" min="0" type="range" value="20" /> <span class="label blue">Identical Meaning</span></p>
+
+	<p>&nbsp;</p>
+	</div>
+	</li>
+</ul>
+
+<ul style="">
+	<li class="instr" style="line-height: 20px; width: 640px;">It's possible that the sentence <u>tries to convey similar meaning to the reference, but is <strong>worded awkwardly</strong></u> (albeit grammatical). We would like you to give it a lower score (lower than if it were worded properly, given the meaning wouldn't change) to reflect this:
+
+	<ul>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code style="font-size: 15px;">the student broke the record</code></li>
+		<li class="instr" style="line-height: 20px; width: 640px;"><code style="font-size: 15px;">The schooler bettered the record​</code></li>
+	</ul>
+
+	<div class="slidecontainer">
+	<p class="emph">Score: 76</p>
+
+	<p><span class="label red">Opposite/Irrelevant</span> <input class="slider" disabled="true" id="slider_dummy8" max="100" min="0" type="range" value="76" /> <span class="label blue">Identical Meaning</span></p>
+
+	<p>&nbsp;</p>
+	</div>
+	</li>
+</ul>
+
+<p class="instr" style="line-height: 20px; width: 640px;">Occassionally, sentences might contain minor errors such as <u>wrong casing</u> (e.g.&nbsp;not&nbsp;capitalized when should be), or <u>extra space between one word</u> ("don't" versus "do n't"). We kindly ask you to ignore these&nbsp;mistakes and base your evaluation on the meaning. <u><strong>We consider these sentences grammatical.</strong></u></p>
+
+<ul>
+	<li class="instr" style="line-height: 20px; width: 640px;"><code style="font-size: 15px;">the student was hugged by the teacher</code></li>
+	<li class="instr" style="line-height: 20px; width: 640px;"><code style="font-size: 15px;">I don't think it 's&nbsp;good. We got ta go now.​</code></li>
+	<li class="instr" style="line-height: 20px; width: 640px;"><code style="font-size: 15px;">They're greed, and they ca n't get enough.​</code></li>
+</ul>
+
+<div><u>Sentence</u>&nbsp;&nbsp;<input checked="checked" disabled="disabled" id="dummy_radio1_1" name="dummy_radio1" type="radio" value="2" />&nbsp;<strong>is fluent and grammatical.</strong><br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<input disabled="disabled" id="dummy_radio1_2" name="dummy_radio1" onchange="toggleSlider(1)" type="radio" value="1" /> contains grammatical errors (besides casing & extra spaces).<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<input disabled="disabled" id="dummy_radio1_3" name="dummy_radio1" onchange="toggleSlider(1)" type="radio" value="0" /> makes absolutely no sense and I cannot comment on its meaning.</div>
+
+<p class="instr" style="line-height: 20px; width: 640px;">&nbsp;</p>
+
+<p class="instr" style="line-height: 20px; width: 640px;">Sometimes, the sentence might contain <u>clear grammatical errors</u>, such as using the wrong verb tense or pronoun case ("he" versus "him"). <em>If you do notice such mistakes, please mark the sentence as such using the radio button.</em></p>
+
+<ul>
+	<li class="instr" style="line-height: 20px; width: 640px;"><code style="font-size: 15px;">the student was hug by the teacher</code></li>
+	<li class="instr" style="line-height: 20px; width: 640px;"><code style="font-size: 15px;">I doesn't think it 's&nbsp;good. We gotta goes now.​</code></li>
+	<li class="instr" style="line-height: 20px; width: 640px;"><code style="font-size: 15px;">They is greed, and them doesn't get enough.​</code></li>
+</ul>
+
+<div><u>Sentence</u>&nbsp;&nbsp;<input disabled="disabled" id="dummy_radio2_1" name="dummy_radio1" type="radio" value="2" />&nbsp;is fluent and grammatical.<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<input checked="checked" disabled="disabled" id="dummy_radio2_2" name="dummy_radio1" onchange="toggleSlider(1)" type="radio" value="1" /> <strong>contains grammatical errors (besides casing & extra spaces).</strong><br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<input disabled="disabled" id="dummy_radio2_3" name="dummy_radio1" onchange="toggleSlider(1)" type="radio" value="0" /> makes absolutely no sense and I cannot comment on its meaning.</div>
+
+<div>&nbsp;</div>
+
+<p class="instr" style="line-height: 20px; width: 640px;">There's a small chance that the sentence&nbsp;<u>makes no sense whatsoever</u>, and it's impossible to extract any clear meanings (<em>as opposed to having different or irrelevant meaning</em>). <em>Please use the radio button to mark it as such.&nbsp;</em>Doing so&nbsp;sets the slider bar evaluation to "N/A".</p>
+
+<ul>
+	<li class="instr" style="line-height: 20px; width: 640px;"><code style="font-size: 15px;">Colorless green ideas sleep furiously.</code></li>
+	<li class="instr" style="line-height: 20px; width: 640px;"><code style="font-size: 15px;">bork bork bork.​</code></li>
+	<li class="instr" style="line-height: 20px; width: 640px;"><code style="font-size: 15px;">Cooking man ​no are good at bay.</code></li>
+</ul>
+
+<div><u>Sentence</u>&nbsp;&nbsp;<input disabled="disabled" id="dummy_radio3_1" name="dummy_radio2" type="radio" value="2" />&nbsp;is fluent and grammatical.<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;&nbsp;<input disabled="disabled" id="dummy_radio3_2" name="dummy_radio2" onchange="toggleSlider(1)" type="radio" value="1" /> contains grammatical errors (besides casing & extra spaces).<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;&nbsp;<input checked="checked" disabled="disabled" id="dummy_radio3_3" name="dummy_radio2" onchange="toggleSlider(1)" type="radio" value="0" /><strong> makes absolutely no sense and I cannot&nbsp;comment on its meaning.</strong></div>
+
+<p class="instr" style="line-height: 20px; width: 640px;">&nbsp;</p>
+
+</div>
+
+<h2>Notes</h2>
+
+<ul>
+	<li>
+	<p>You may move the slider bars using a mouse, or use up (&uarr;) and down (&darr;) arrow keys for fine adjustments.</p>
+    </li>
+    <li>
+        <p>There may be instances where there are less than 3 sentences for each reference. Please do not score the empty ones. Mark them as ungrammatical.</p>
+    </li>
+</ul>
+
+<p>&nbsp;</p>
+</div>
+</div>
+</div>
+
+<p><em>Contact us: <u><a href="mailto:dhverma@cs.stonybrook.edu" target="_top"> dhverma@cs.stonybrook.edu,  </a></u>
+                   <u><a href="mailto:shrsinha@cs.stonybrook.edu" target="_top"> shrsinha@cs.stonybrook.edu </a></u>
+</p>
+
+<h2>Tasks</h2>
+
+<section>
+<fieldset>
+<p class="hidden">${sen1_origin_id}</p>
+
+<p class="hidden">${sen1_task}</p>
+
+<p class="sentence" style="text-align: center;"><u>Reference Sentence 1:</u></p>
+
+<p class="sentence" style="text-align: center;">${sentence1}</p>
+
+<div class="checkbox" style="float: left"><label><input name="gm0" type="hidden" value="0" /><input id="gm0" name="gm0" type="checkbox" value="1" />The <u>reference sentence</u> is not grammatical.</label></div>
+
+<div class="checkbox" style="float: right"><label><input name="pg0" type="hidden" value="0" /><input id="pg0" name="pg0" type="checkbox" value="1" />The <u>reference sentence</u> contains <strong><u><em>offensive</em></u></strong> contents.</label></div>
+</fieldset>
+
+
+<fieldset>
+
+<p><u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">Reference:</span></u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">&nbsp; &nbsp; </span><span style="font-weight: bold;">${sentence1}</span></p>
+
+<p><u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">Sentence&nbsp;#1:</span></u><span style="font-size: 16px; background-color: rgb(251, 251, 251);"> </span><span style="font-weight: bold;">${sen1_paraphrase0}</span></p>
+
+<div><u>Sentence #1</u>&nbsp;&nbsp;<input checked="checked" id="gm1_3" name="gm1" onchange="toggleSlider(1)" type="radio" value="2" />&nbsp;is fluent and grammatical.<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<input id="gm1_2" name="gm1" onchange="toggleSlider(1)" type="radio" value="1" /> contains grammatical errors (besides casing & extra spaces).<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<input id="gm1_1" name="gm1" onchange="toggleSlider(1)" type="radio" value="0" /> makes absolutely no sense and I cannot comment on its meaning.</div>
+
+<div class="slidecontainer">
+<p class="emph">Score: <span id="myRange1">50</span></p>
+<span class="label red">Opposite/Irrelevant</span> <input class="slider" id="slide1" max="100" min="0" name="range1" oninput="updateSlider(this.value, 1);" type="range" value="50" /> <span class="label blue">Identical Meaning</span></div>
+
+<hr />
+
+<p><u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">Reference:</span></u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">&nbsp; &nbsp;&nbsp;</span><span style="font-weight: bold;">${sentence1}</span></p>
+
+<p><u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">Sentence&nbsp;#2:</span></u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">&nbsp;</span><span style="font-weight: bold;">${sen1_paraphrase1}</span></p>
+
+<div><u>Sentence #2</u>&nbsp;&nbsp;<input checked="checked" id="gm2_3" name="gm2" onchange="toggleSlider(2)" type="radio" value="2" />&nbsp;is fluent and grammatical.<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<input id="gm2_2" name="gm2" onchange="toggleSlider(2)" type="radio" value="1" /> contains grammatical errors (besides casing & extra spaces)<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<input id="gm2_1" name="gm2" onchange="toggleSlider(2)" type="radio" value="0" /> makes absolutely no sense and I cannot comment on its meaning.</div>
+
+<div class="slidecontainer">
+<p class="emph">Score: <span id="myRange2">50</span></p>
+<span class="label red">Opposite/Irrelevant</span> <input class="slider" id="slide2" max="100" min="0" name="range2" oninput="updateSlider(this.value, 2);" type="range" value="50" /> <span class="label blue">Identical Meaning</span></div>
+
+<hr />
+<fieldset>
+<p class="hidden">${sen2_origin_id}</p>
+
+<p class="hidden">${sen2_task}</p>
+
+<p class="sentence" style="text-align: center;"><u>Reference Sentence 2:</u></p>
+
+<p class="sentence" style="text-align: center;">${sentence2}</p>
+
+<div class="checkbox" style="float: left"><label><input name="gm3" type="hidden" value="0" /><input id="gm3" name="gm3" type="checkbox" value="1" />The <u>reference sentence</u> is not grammatical.</label></div>
+
+<div class="checkbox" style="float: right"><label><input name="pg3" type="hidden" value="0" /><input id="pg3" name="pg3" type="checkbox" value="1" />The <u>reference sentence</u> contains <strong><u><em>offensive</em></u></strong> contents.</label></div>
+</fieldset>
+
+
+<fieldset>
+
+<p><u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">Reference:</span></u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">&nbsp; &nbsp; </span><span style="font-weight: bold;">${sentence2}</span></p>
+
+<p><u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">Sentence&nbsp;#1:</span></u><span style="font-size: 16px; background-color: rgb(251, 251, 251);"> </span><span style="font-weight: bold;">${sen2_paraphrase0}</span></p>
+
+<div><u>Sentence #1</u>&nbsp;&nbsp;<input checked="checked" id="gm4_3" name="gm4" onchange="toggleSlider(4)" type="radio" value="2" />&nbsp;is fluent and grammatical.<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<input id="gm4_2" name="gm4" onchange="toggleSlider(4)" type="radio" value="1" /> contains grammatical errors (besides casing & extra spaces).<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<input id="gm4_1" name="gm4" onchange="toggleSlider(4)" type="radio" value="0" /> makes absolutely no sense and I cannot comment on its meaning.</div>
+
+<div class="slidecontainer">
+<p class="emph">Score: <span id="myRange4">50</span></p>
+<span class="label red">Opposite/Irrelevant</span> <input class="slider" id="slide4" max="100" min="0" name="range4" oninput="updateSlider(this.value, 4);" type="range" value="50" /> <span class="label blue">Identical Meaning</span></div>
+
+<hr />
+
+<p><u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">Reference:</span></u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">&nbsp; &nbsp;&nbsp;</span><span style="font-weight: bold;">${sentence2}</span></p>
+
+<p><u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">Sentence&nbsp;#2:</span></u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">&nbsp;</span><span style="font-weight: bold;">${sen2_paraphrase1}</span></p>
+
+<div><u>Sentence #2</u>&nbsp;&nbsp;<input checked="checked" id="gm5_3" name="gm5" onchange="toggleSlider(5)" type="radio" value="2" />&nbsp;is fluent and grammatical.<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<input id="gm5_2" name="gm5" onchange="toggleSlider(5)" type="radio" value="1" /> contains grammatical errors (besides casing & extra spaces)<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<input id="gm5_1" name="gm5" onchange="toggleSlider(5)" type="radio" value="0" /> makes absolutely no sense and I cannot comment on its meaning.</div>
+
+<div class="slidecontainer">
+<p class="emph">Score: <span id="myRange5">50</span></p>
+<span class="label red">Opposite/Irrelevant</span> <input class="slider" id="slide5" max="100" min="0" name="range5" oninput="updateSlider(this.value, 5);" type="range" value="50" /> <span class="label blue">Identical Meaning</span></div>
+
+<hr />
+
+<p>Comments and feedback (This is optional. Please leave a comment if you have any questions, find issues, etc.)</p>
+<textarea class="form-control" cols="120" name="Comments" rows="5"></textarea></fieldset>
+</section>
+</div>
+</section>
+<style type="text/css">fieldset { padding: 10px; background:#fbfbfb; border-radius:5px; margin-bottom:5px; }
+</style>
