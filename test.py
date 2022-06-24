@@ -26,6 +26,7 @@ class Tester:
         self.hidden_size = options['hidden_size']
         self.stacked_layers = options['stacked_layers']
         self.num_classes = options['num_classes']
+        self.is_hypothesis_only = options['is_hypothesis_only']
         self.vocab = model_utils.load_vocab(self.save_path, self.model_name)
 
     def labels_to_indices(self, labels):
@@ -48,20 +49,21 @@ class Tester:
         for premise, hypothesis in tqdm(zip(premises, hypotheses), total=len(premises)):
             indices = []
             masks = []
-            premise_tokens = self.strip_punctuations(premise).split(' ')
-            for i in range(self.seq_len):
-                if i >= len(premise_tokens):
-                    indices.append(0) # Append padding
-                    masks.append(0)
-                else:
-                    w = premise_tokens[i]
-                    if self.vocab.get_index(w):
-                        indices.append(self.vocab.get_index(w))
+            if not self.is_hypothesis_only:
+                premise_tokens = self.strip_punctuations(premise).split(' ')
+                for i in range(self.seq_len):
+                    if i >= len(premise_tokens):
+                        indices.append(0) # Append padding
+                        masks.append(0)
                     else:
-                        indices.append(1) # UNK token index
-                    masks.append(1)
-            premise_indices.append(indices)
-            premise_masks.append(masks)
+                        w = premise_tokens[i]
+                        if self.vocab.get_index(w):
+                            indices.append(self.vocab.get_index(w))
+                        else:
+                            indices.append(1) # UNK token index
+                        masks.append(1)
+                premise_indices.append(indices)
+                premise_masks.append(masks)
             
             indices = []
             masks = []
@@ -93,7 +95,7 @@ class Tester:
         premise_indices, premise_masks, hypothesis_indices, hypothesis_masks = self.convert_to_indices(premises, hypotheses)
         # label_indices = self.labels_to_indices(labels)
 
-        test_data = DataSetLoader(np.array(premise_indices), np.array(premise_masks), np.array(hypothesis_indices), np.array(hypothesis_masks), np.array(label_indices))
+        test_data = DataSetLoader(np.array(premise_indices), np.array(premise_masks), np.array(hypothesis_indices), np.array(hypothesis_masks), np.array(label_indices), is_hypothesis_only=self.is_hypothesis_only)
 
         test_loader = torch.utils.data.DataLoader(test_data, batch_size=self.batch_size)
 
@@ -104,9 +106,9 @@ class Tester:
         embedding_matrix = model_utils.create_embedding_matrix(embeddings_index, 300, self.vocab)
 
         if self.model_type == 'bilstm':
-            model = BiLSTM(hidden_size=self.hidden_size, stacked_layers=self.stacked_layers, weights_matrix=embedding_matrix, device=self.device, num_classes=self.num_classes)
+            model = BiLSTM(hidden_size=self.hidden_size, stacked_layers=self.stacked_layers, weights_matrix=embedding_matrix, device=self.device, num_classes=self.num_classes, is_hypothesis_only=self.is_hypothesis_only)
         elif self.model_type == 'cbow':
-            model = CBOW(weights_matrix=embedding_matrix, num_classes=self.num_classes)
+            model = CBOW(weights_matrix=embedding_matrix, num_classes=self.num_classes, is_hypothesis_only=self.is_hypothesis_only)
 
         model.to(self.device)
         return model
@@ -134,8 +136,10 @@ class Tester:
         total_test_f1 = 0
         total_test_loss = 0
         with torch.no_grad():
-            for premises, premise_mask, hypotheses, hypothesis_mask, labels in tqdm(test_data):
-                premises = premises.to(self.device)
+            for batch in tqdm(test_data):
+                premises, premise_mask, hypotheses, hypothesis_mask, labels = batch
+                if not self.is_hypothesis_only:
+                    premises = premises.to(self.device)
                 hypotheses = hypotheses.to(self.device)
                 labels = labels.to(self.device)
                 
@@ -209,6 +213,8 @@ if __name__ == '__main__':
     options['emb_path'] = args.emb_path
     options['test_path'] = args.test_path
     options['batch_size'] = args.batch_size
+    if 'is_hypothesis_only' not in options:
+        options['is_hypothesis_only'] = False # Added to support backward compatibility for models trained before hypo only training was added
     print(options)
     tester = Tester(options)
     tester.execute()

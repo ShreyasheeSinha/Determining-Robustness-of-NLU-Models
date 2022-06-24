@@ -6,10 +6,11 @@ from tqdm import tqdm
 
 class RobertaDatasetLoader(Dataset):
 
-    def __init__(self, data, tokenizer, label_dict=None):
+    def __init__(self, data, tokenizer, label_dict=None, is_hypothesis_only=False):
         self.data = data
         self.tokenizer = tokenizer
         self.label_dict = label_dict
+        self.is_hypothesis_only = is_hypothesis_only
 
     def process_data(self):
         print("Processing data..")
@@ -25,7 +26,10 @@ class RobertaDatasetLoader(Dataset):
         for (premise, hypothesis, label) in tqdm(zip(premise_list, hypothesis_list, label_list), total=len(premise_list)):
 
             if premise != None and hypothesis != None:
-                encoded_values = self.tokenizer.encode_plus(premise, hypothesis, return_token_type_ids=True, return_attention_mask=True)
+                if not self.is_hypothesis_only:
+                    encoded_values = self.tokenizer.encode_plus(premise, hypothesis, return_token_type_ids=True, return_attention_mask=True)
+                else:
+                    encoded_values = self.tokenizer.encode_plus(hypothesis, return_token_type_ids=True, return_attention_mask=True)
                 token_ids.append(torch.tensor(encoded_values['input_ids']))
                 seg_ids.append(torch.tensor(encoded_values['token_type_ids']))
                 mask_ids.append(torch.tensor(encoded_values['attention_mask']))
