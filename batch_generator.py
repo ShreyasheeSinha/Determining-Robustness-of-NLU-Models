@@ -9,6 +9,29 @@ def get_paraphrase(row, index):
     except IndexError:
         return None
 
+def get_unique_paraphrases(para_list):
+    unique_list = []
+    unique_paras = set()
+    for para in para_list:
+        curr_para = para['paraphrase']
+        curr_jaccard = para['jaccard_score']
+        if curr_para.strip().lower() not in unique_paras:
+            unique_paras.add(curr_para.strip().lower())
+            curr_para_dict = {
+                'paraphrase': curr_para,
+                'jaccard_score': curr_jaccard
+            }
+            unique_list.append(curr_para_dict)
+    if len(para_list) != len(unique_list):
+        print("Before removing dups:", len(para_list))
+        print("After removing dups:", len(unique_list))
+    return unique_list
+
+def remove_duplicate_paraphrases(data):
+    data['sentence1dash'] = data['sentence1dash'].apply(lambda val: get_unique_paraphrases(val))
+    data['sentence2dash'] = data['sentence2dash'].apply(lambda val: get_unique_paraphrases(val))
+    return data
+
 def get_data_frame_given_sentence_len(data, len):
     sentence1_data = data[data['sentence1_len'] == len]
     sentence2_data = data[data['sentence2_len'] == len]
@@ -52,12 +75,21 @@ if __name__ == "__main__":
     create_path(save_folder_path)
 
     data = load_utils.load_data(data_path)
+    data = remove_duplicate_paraphrases(data)
     data['sentence1_len'] = data['sentence1dash'].str.len()
     data['sentence2_len'] = data['sentence2dash'].str.len()
 
     three_paraphrase_data = get_data_frame_given_sentence_len(data, 3).reset_index()
     two_paraphrase_data = get_data_frame_given_sentence_len(data, 2).reset_index()
     one_paraphrase_data = get_data_frame_given_sentence_len(data, 1).reset_index()
+    
+    full_path = os.path.join(save_folder_path, "three_paraphrase_data.csv")
+    three_paraphrase_data.to_csv(full_path, index=False)
+    full_path = os.path.join(save_folder_path, "two_paraphrase_data.csv")
+    two_paraphrase_data.to_csv(full_path, index=False)
+    full_path = os.path.join(save_folder_path, "one_paraphrase_data.csv")
+    one_paraphrase_data.to_csv(full_path, index=False)
+
     three_paraphrase_data_len = len(three_paraphrase_data)
     two_paraphrase_data_len = len(two_paraphrase_data)
     one_paraphrase_data_len = len(one_paraphrase_data)
@@ -143,6 +175,6 @@ if __name__ == "__main__":
             values[task] = row["task"]
         one_merged_data = one_merged_data.append(values, ignore_index=True)
 
-    save_batches(three_one_merged_data, "3+1", save_folder_path)
-    save_batches(two_two_merged_data, "2+2", save_folder_path)
+    save_batches(three_one_merged_data, "3_1", save_folder_path)
+    save_batches(two_two_merged_data, "2_2", save_folder_path)
     save_batches(one_merged_data, "1", save_folder_path)
