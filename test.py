@@ -213,6 +213,7 @@ if __name__ == '__main__':
     options['emb_path'] = args.emb_path
     options['test_path'] = args.test_path
     options['batch_size'] = args.batch_size
+    options['save_path'] = save_path
     if 'is_hypothesis_only' not in options:
         options['is_hypothesis_only'] = False # Added to support backward compatibility for models trained before hypo only training was added
     print(options)
