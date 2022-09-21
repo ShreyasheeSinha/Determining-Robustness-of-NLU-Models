@@ -1,0 +1,345 @@
+<!-- Bootstrap v3.0.3 -->
+<link href="https://s3.amazonaws.com/mturk-public/bs30/css/bootstrap.min.css" rel="stylesheet" />
+<style type="text/css">.main-section {
+        margin-bottom: 15px;
+        padding: 10px 10px;
+    }
+    .sentence {
+        font-weight: bold;
+    }
+    .hidden {
+        display: none;
+    }
+    h1 {
+        background-color: #ffbbff !important;
+        color: black;
+        padding: 0.25em;
+        font-size: 32px;
+        font-weight: bold;
+    }
+    h2 {
+        font-size: 24px;
+        font-weight: bold;
+    }
+    div {
+        font-size: 16px;
+    }
+    p {
+        font-size: 16px;
+    }
+    body * {
+        font-family: sans-serif, Verdana, Geneva;
+    }
+    .panel {
+        border: none;
+    }
+    .panel-primary {
+        border: none;
+        width: 700px;
+    }
+
+    .label {
+        font-size: 16px;
+    }
+    .blue{color: #0000FF;}
+    .red{color: #FF0000;}
+    .grey{color: #777777;}
+    .instr * {}
+
+    .emph {
+        font-weight: bold;
+    }
+    .form-control {}
+
+    input[type="checkbox"] + label {
+        display: inline-block;
+        width: 25px;
+        height: 25px;
+        background-color: #ffffff;
+        cursor: pointer;
+        border: 2px solid #444444;
+        border-radius: 3px;
+        margin-right: 25px;
+    }
+
+    input[type="checkbox"]:checked + label {
+        background-color: #999999;
+    }
+
+    .slidecontainer {
+        text-align: center;
+        width: 100%; /* Width of the outside container */
+    }
+
+    .slider {
+        -webkit-appearance: none;  /* Override default CSS styles */
+        appearance: none;
+        width: 40%; /* Full-width */
+        height: 10px; /* Specified height */
+        background: #b4b4b4; /* Grey background */
+        outline: none; /* Remove outline */
+        opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+        -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+        transition: opacity .2s;
+    }
+
+    /* Mouse-over effects */
+    .slider:hover {
+        opacity: 1; /* Fully shown on mouse-over */
+    }
+
+    /* The slider handle (use webkit (Chrome, Opera, Safari, Edge) and moz (Firefox) to override default look) */
+    .slider::-webkit-slider-thumb {
+        -webkit-appearance: none; /* Override default look */
+        appearance: none;
+        width: 25px; /* Set a specific slider handle width */
+        height: 25px; /* Slider handle height */
+        background: #ffffff; /* Green background */
+        border: 2px solid #444444;
+        border-radius: 3px;
+        cursor: pointer; /* Cursor on hover */
+    }
+
+    .slider::-moz-range-thumb {
+        width: 25px; /* Set a specific slider handle width */
+        height: 25px; /* Slider handle height */
+        background: #ffffff; /* Green background */
+        border: 2px solid #cc00cc;
+        border-radius: 3px;
+        cursor: pointer; /* Cursor on hover */
+    }
+
+    .disabled-slider {
+        -webkit-appearance: none;  /* Override default CSS styles */
+        appearance: none;
+        width: 40%; /* Full-width */
+        height: 10px; /* Specified height */
+        background: #b4b4b4; /* Grey background */
+        outline: none; /* Remove outline */
+        opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+        -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+        transition: opacity .2s;
+    }
+
+    /* The slider handle (use webkit (Chrome, Opera, Safari, Edge) and moz (Firefox) to override default look) */
+    .disabled-slider::-webkit-slider-thumb {
+        -webkit-appearance: none; /* Override default look */
+        appearance: none;
+        width: 0; /* Set a specific slider handle width */
+        height: 0; /* Slider handle height */
+        background: #ffffff; /* Green background */
+        border: 0;
+    }
+
+    .disabled-slider::-moz-range-thumb {
+        width: 0; /* Set a specific slider handle width */
+        height: 0; /* Slider handle height */
+        background: #ffffff; /* Green background */
+        border: 0;
+    }
+</style>
+<script src="https://code.jquery.com/jquery-3.3.1.js"
+    integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60="
+    crossorigin="anonymous"></script><script type="text/javascript">
+    function toggleExamples(){
+        if ((document.getElementById("examples").style.display) =="block"){
+            document.getElementById("examples").style.display="none";
+        }
+        else{
+            document.getElementById("examples").style.display="block";
+        }
+    }
+
+    function toggleSlider(sliderNum) {
+        var sliderInput = document.getElementById("slide" + sliderNum);
+        if (document.getElementById("gm" + sliderNum + "_1").checked) {
+            sliderInput.disabled = true;
+            sliderInput.className = "disabled-slider";
+            updateSlider("N/A", sliderNum);
+        } else {
+            sliderInput.disabled = false;
+            sliderInput.className = "slider";
+            updateSlider(sliderInput.value, sliderNum);
+        }
+    }
+
+    function updateSlider(slideAmount, sliderNum) {
+        var scoreDiv = document.getElementById("myRange" + sliderNum);
+        scoreDiv.innerHTML = slideAmount;
+    }
+
+    var utf8ByteArrayToString = function(bytes) {
+      var out = [], pos = 0, c = 0;
+      while (pos < bytes.length) {
+        var c1 = bytes[pos++];
+        if (c1 < 128) {
+          out[c++] = String.fromCharCode(c1);
+        } else if (c1 > 191 && c1 < 224) {
+          var c2 = bytes[pos++];
+          out[c++] = String.fromCharCode((c1 & 31) << 6 | c2 & 63);
+        } else if (c1 > 239 && c1 < 365) {
+          // Surrogate Pair
+          var c2 = bytes[pos++];
+          var c3 = bytes[pos++];
+          var c4 = bytes[pos++];
+          var u = ((c1 & 7) << 18 | (c2 & 63) << 12 | (c3 & 63) << 6 | c4 & 63) -
+                  0x10000;
+          out[c++] = String.fromCharCode(0xD800 + (u >> 10));
+          out[c++] = String.fromCharCode(0xDC00 + (u & 1023));
+        } else {
+          var c2 = bytes[pos++];
+          var c3 = bytes[pos++];
+          out[c++] =
+            String.fromCharCode((c1 & 15) << 12 | (c2 & 63) << 6 | c3 & 63);
+        }
+      }
+      return out.join('');
+    };
+
+    function displayEmoji() {
+      $(this).text(utf8ByteArrayToString(JSON.parse($(this).attr('data-emoji-bytes'))));
+    }
+    function toggleInstructions() {
+      if ($('#toggle_instructions').html() == "Show the instructions (<strong>Please click&nbsp;if&nbsp;this is your first time</strong>)") {
+        $('#toggle_instructions').html("Hide the instructions");
+        $('#instruction_content').show();
+      } else {
+        $('#toggle_instructions').html("Show the instructions (<strong>Please click&nbsp;if&nbsp;this is your first time</strong>)");
+        $('#instruction_content').hide();
+      }
+    }
+    $( document ).ready(function() {
+      $('span.emoji-bytes').each(displayEmoji);
+    });
+</script>
+<section class="container main-section">
+<div class="row col-xs-12 col-md-12">
+<div class="panel panel-primary">
+<div class="panel panel-primary" style="border-width: 0px; border-style: solid; border-color: rgb(255, 255, 255);">
+<h2 border-image:="" border-left-style:="" border-right-style:="" border-top-style:="" border-width:="" class="panel-heading" helvetica="" style="font-size: 25px; text-align: center;"><strong><span style="color: rgb(12, 37, 40);">Judgment of relationship between sentences</span></strong></h2>
+
+<p><span id="toggle_instructions" onclick="toggleInstructions()" style="color:blue;font-size:16px;cursor:hand;border-bottom:1px solid">Show the instructions (<strong>Please click&nbsp;if&nbsp;this is your first time</strong>)</span></p>
+
+<div id="instruction_content" style="display: none">&nbsp;
+<h2>Instructions</h2>
+
+<div class="panel-body" style="font-size: 13px;">
+<p class="instr" style="font-size: 15px; line-height: 20px; width: 640px;"><span style="font-size: 15px;">Thank you for participating&nbsp;</span>in this HIT! You will evaluate the relationship between two sentences. The goal is to improve&nbsp;comprehension of languages by computers: your assistance is crucial&nbsp;to&nbsp;building better&nbsp;technologies behind services like Amazon Alexa, Apple Siri, or Google Translate.</p>
+
+<p class="instr" style="font-size: 15px; line-height: 20px; width: 640px;">You will be presented with pairs of sentences.&nbsp;You would have to tell us the following by picking <i>true</i> or <i>false</i>: <u><strong>Assuming the first sentence is true, would the second sentence be likely true as well.</strong></u>&nbsp;</p>
+
+</div>
+
+<div class="panel-body" style="font-size: 13px;">
+
+<h3>How do I judge?</h3>
+
+<p class="instr" style="line-height: 20px; width: 640px;">The following are some examples of the relationships between a pair of sentences.</p>
+
+<fieldset>
+<ul>
+	<li class="instr" style="font-size: 16px; line-height: 25px; width: 640px;"><b>Sentence 1:</b> The president was assassinated.</li>
+	<li class="instr" style="font-size: 16px; line-height: 25px; width: 640px;"><b>Sentence 2:</b> The president is dead.</li>
+</ul>
+
+<p class="instr" style="line-height: 25px; width: 640px;"><i>&nbsp; &nbsp; &nbsp;Given the first sentence is true, the second will be true as well.</i></p>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<input checked="checked" disabled="disabled" id="dummy_radio1_2" name="dummy_radio1" type="radio" value="1" /><strong>&nbsp;true</strong><br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<input disabled="disabled" id="dummy_radio1_1" name="dummy_radio1" onchange="toggleSlider(1)" type="radio" value="0" />&nbsp;false</div>
+
+<!-- <br/> -->
+<hr />
+
+<ul>
+	<li class="instr" style="font-size: 16px; line-height: 25px; width: 640px;"><b>Sentence 1:</b> The president was assassinated.</li>
+	<li class="instr" style="font-size: 16px; line-height: 25px; width: 640px;"><b>Sentence 2:</b> The president visited Los Angeles yesterday.</li>
+</ul>
+
+<p class="instr" style="line-height: 25px; width: 640px;"><i>&nbsp; &nbsp; &nbsp;Given the first sentence is true, the second will be true as well.</i></p>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<input disabled="disabled" id="dummy_radio1_2" name="dummy_radio1" type="radio" value="1" />&nbsp;true<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<input checked="checked" disabled="disabled" id="dummy_radio1_1" name="dummy_radio1" onchange="toggleSlider(1)" type="radio" value="0" /><strong>&nbsp;false</strong></div>
+
+<p class="instr" style="line-height: 20px; width: 640px;">&nbsp;</p>
+</fieldset>
+
+</div>
+
+<h2>Notes</h2>
+
+<ul>
+	<li>
+	<p>For sentences with ambiguous meanings, please try to infer as best you can. Some of them might have minor spelling mistakes or an extra word here or there. You can make a note in the comments section if you want.</p>
+    </li>
+</ul>
+
+<p>&nbsp;</p>
+</div>
+</div>
+</div>
+
+<p><em>Contact us: <u><a href="mailto:dhverma@cs.stonybrook.edu" target="_top"> dhverma@cs.stonybrook.edu,  </a></u>
+    <u><a href="mailto:shrsinha@cs.stonybrook.edu" target="_top"> shrsinha@cs.stonybrook.edu </a></u>
+</p>
+
+<h2>Tasks</h2>
+
+<section>
+
+
+<fieldset>
+    
+<p class="hidden">${meta1}</p>
+
+<p><u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">Sentence&nbsp;#1:</span></u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">&nbsp; &nbsp; </span><span style="font-weight: bold;">${sent1_1}</span></p>
+
+<p><u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">Sentence&nbsp;#2:</span></u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">&nbsp; &nbsp; </span><span style="font-weight: bold;">${sent2_1}</span></p>
+
+<p class="instr" style="line-height: 25px; width: 640px;"><i>&nbsp; &nbsp; &nbsp;Given the first sentence is true, the second will be true as well.</i></p>
+<div>&nbsp; &nbsp; &nbsp;<input checked="checked" id="gm1_2" name="gm1" onchange="toggleSlider(1)" type="radio" value="1" />&nbsp;true<br />
+&nbsp; &nbsp; &nbsp;<input id="gm1_1" name="gm1" onchange="toggleSlider(1)" type="radio" value="0" />&nbsp;false</div>
+    
+<hr />
+
+<p class="hidden">${meta2}</p>
+
+<p><u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">Sentence&nbsp;#1:</span></u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">&nbsp; &nbsp; </span><span style="font-weight: bold;">${sent1_2}</span></p>
+
+<p><u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">Sentence&nbsp;#2:</span></u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">&nbsp; &nbsp; </span><span style="font-weight: bold;">${sent2_2}</span></p>
+
+<p class="instr" style="line-height: 25px; width: 640px;"><i>&nbsp; &nbsp; &nbsp;Given the first sentence is true, the second will be true as well.</i></p>
+<div>&nbsp; &nbsp; &nbsp;<input checked="checked" id="gm2_2" name="gm2" onchange="toggleSlider(1)" type="radio" value="1" />&nbsp;true<br />
+&nbsp; &nbsp; &nbsp;<input id="gm2_1" name="gm2" onchange="toggleSlider(1)" type="radio" value="0" />&nbsp;false</div>
+    
+<hr />
+
+<p class="hidden">${meta3}</p>
+
+<p><u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">Sentence&nbsp;#1:</span></u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">&nbsp; &nbsp; </span><span style="font-weight: bold;">${sent1_3}</span></p>
+
+<p><u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">Sentence&nbsp;#2:</span></u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">&nbsp; &nbsp; </span><span style="font-weight: bold;">${sent2_3}</span></p>
+
+<p class="instr" style="line-height: 25px; width: 640px;"><i>&nbsp; &nbsp; &nbsp;Given the first sentence is true, the second will be true as well.</i></p>
+<div>&nbsp; &nbsp; &nbsp;<input checked="checked" id="gm3_2" name="gm3" onchange="toggleSlider(1)" type="radio" value="1" />&nbsp;true<br />
+&nbsp; &nbsp; &nbsp;<input id="gm3_1" name="gm3" onchange="toggleSlider(1)" type="radio" value="0" />&nbsp;false</div>
+    
+<hr />
+
+<p class="hidden">${meta4}</p>
+
+<p><u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">Sentence&nbsp;#1:</span></u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">&nbsp; &nbsp; </span><span style="font-weight: bold;">${sent1_4}</span></p>
+
+<p><u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">Sentence&nbsp;#2:</span></u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">&nbsp; &nbsp; </span><span style="font-weight: bold;">${sent2_4}</span></p>
+
+<p class="instr" style="line-height: 25px; width: 640px;"><i>&nbsp; &nbsp; &nbsp;Given the first sentence is true, the second will be true as well.</i></p>
+<div>&nbsp; &nbsp; &nbsp;<input checked="checked" id="gm4_2" name="gm4" onchange="toggleSlider(1)" type="radio" value="1" />&nbsp;true<br />
+&nbsp; &nbsp; &nbsp;<input id="gm4_1" name="gm4" onchange="toggleSlider(1)" type="radio" value="0" />&nbsp;false</div>
+
+<hr />
+
+
+<p>Comments and feedback (This is optional. Please leave a comment if you have any questions, find issues, etc.)</p>
+<textarea class="form-control" cols="120" name="Comments" rows="5"></textarea></fieldset>
+</section>
+</div>
+</section>
+<style type="text/css">fieldset { padding: 10px; background:#fbfbfb; border-radius:5px; margin-bottom:5px; }
+</style>
