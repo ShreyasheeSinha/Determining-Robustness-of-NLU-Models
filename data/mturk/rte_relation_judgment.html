@@ -226,7 +226,7 @@
 <div class="panel-body" style="font-size: 13px;">
 <p class="instr" style="font-size: 15px; line-height: 20px; width: 640px;"><span style="font-size: 15px;">Thank you for participating&nbsp;</span>in this HIT! You will evaluate the relationship between two sentences. The goal is to improve&nbsp;comprehension of languages by computers: your assistance is crucial&nbsp;to&nbsp;building better&nbsp;technologies behind services like Amazon Alexa, Apple Siri, or Google Translate.</p>
 
-<p class="instr" style="font-size: 15px; line-height: 20px; width: 640px;">You will be presented with pairs of sentences.&nbsp;You would have to tell us the following by picking <i>true</i> or <i>false</i>: <u><strong>Assuming the first sentence is true, would the second sentence be likely true as well.</strong></u>&nbsp;</p>
+<p class="instr" style="font-size: 15px; line-height: 20px; width: 640px;">You will be presented with pairs of sentences.&nbsp;<u><strong>Assuming the first sentence is true, you would need to judge that will the second sentence be likely true as well.</strong></u>&nbsp;</p>
 
 </div>
 
@@ -246,15 +246,45 @@
 <div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<input checked="checked" disabled="disabled" id="dummy_radio1_2" name="dummy_radio1" type="radio" value="1" /><strong>&nbsp;true</strong><br />
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<input disabled="disabled" id="dummy_radio1_1" name="dummy_radio1" onchange="toggleSlider(1)" type="radio" value="0" />&nbsp;false</div>
 
-<!-- <br/> -->
 <hr />
 
 <ul>
-	<li class="instr" style="font-size: 16px; line-height: 25px; width: 640px;"><b>Sentence 1:</b> The president was assassinated.</li>
-	<li class="instr" style="font-size: 16px; line-height: 25px; width: 640px;"><b>Sentence 2:</b> The president visited Los Angeles yesterday.</li>
+	<li class="instr" style="font-size: 16px; line-height: 25px; width: 640px;"><b>Sentence 1:</b> World health officials warned yesterday that West Africa and Central Africa were on the verge of the worst polio outbreak in years , stemming from the refusal of a single state in northern Nigeria to vaccinate children against the disease.</li>
+	<li class="instr" style="font-size: 16px; line-height: 25px; width: 640px;"><b>Sentence 2:</b> African polio outbreak feared.</li>
 </ul>
 
 <p class="instr" style="line-height: 25px; width: 640px;"><i>&nbsp; &nbsp; &nbsp;Given the first sentence is true, the second will be true as well.</i></p>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<input checked="checked" disabled="disabled" id="dummy_radio1_2" name="dummy_radio1" type="radio" value="1" /><strong>&nbsp;true</strong><br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<input disabled="disabled" id="dummy_radio1_1" name="dummy_radio1" onchange="toggleSlider(1)" type="radio" value="0" />&nbsp;false</div>
+
+<hr />
+
+<ul>
+	<li class="instr" style="font-size: 16px; line-height: 25px; width: 640px;"><b>Sentence 1:</b> Christoffer's family was identified only as an Air Force family living in Southern California.</li>
+	<li class="instr" style="font-size: 16px; line-height: 25px; width: 640px;"><b>Sentence 2:</b> Air Force is an organisation based in Southern California.</li>
+</ul>
+
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<input disabled="disabled" id="dummy_radio1_2" name="dummy_radio1" type="radio" value="1" />&nbsp;true<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<input checked="checked" disabled="disabled" id="dummy_radio1_1" name="dummy_radio1" onchange="toggleSlider(1)" type="radio" value="0" /><strong>&nbsp;false</strong></div>
+
+<hr />
+
+<ul>
+	<li class="instr" style="font-size: 16px; line-height: 25px; width: 640px;"><b>Sentence 1:</b> This museum was approved by John Lennon's widow Yoko Ono as the world's first museum to honor John Lennon.</li>
+	<li class="instr" style="font-size: 16px; line-height: 25px; width: 640px;"><b>Sentence 2:</b> Yoko Ono is John Lennon's widow.</li>
+</ul>
+
+<p class="instr" style="line-height: 25px; width: 640px;"><i>&nbsp; &nbsp; &nbsp;Given the first sentence is true, the second will be true as well.</i></p>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<input checked="checked" disabled="disabled" id="dummy_radio1_2" name="dummy_radio1" type="radio" value="1" /><strong>&nbsp;true</strong><br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<input disabled="disabled" id="dummy_radio1_1" name="dummy_radio1" onchange="toggleSlider(1)" type="radio" value="0" />&nbsp;false</div>
+
+<hr />
+
+<ul>
+	<li class="instr" style="font-size: 16px; line-height: 25px; width: 640px;"><b>Sentence 1:</b> Yes , water is a critical area of dispute in the Arab-Israeli conflict ; but given the current climate of peacemaking , and given the general war-weariness among states and populations , such predictions are excitable pieces of subjectivism.</li>
+	<li class="instr" style="font-size: 16px; line-height: 25px; width: 640px;"><b>Sentence 2:</b> There is a territorial waters dispute.</li>
+</ul>
+
 <div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<input disabled="disabled" id="dummy_radio1_2" name="dummy_radio1" type="radio" value="1" />&nbsp;true<br />
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<input checked="checked" disabled="disabled" id="dummy_radio1_1" name="dummy_radio1" onchange="toggleSlider(1)" type="radio" value="0" /><strong>&nbsp;false</strong></div>
 
@@ -322,19 +352,6 @@
 &nbsp; &nbsp; &nbsp;<input id="gm3_1" name="gm3" onchange="toggleSlider(1)" type="radio" value="0" />&nbsp;false</div>
     
 <hr />
-
-<p class="hidden">${meta4}</p>
-
-<p><u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">Sentence&nbsp;#1:</span></u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">&nbsp; &nbsp; </span><span style="font-weight: bold;">${sent1_4}</span></p>
-
-<p><u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">Sentence&nbsp;#2:</span></u><span style="font-size: 16px; background-color: rgb(251, 251, 251);">&nbsp; &nbsp; </span><span style="font-weight: bold;">${sent2_4}</span></p>
-
-<p class="instr" style="line-height: 25px; width: 640px;"><i>&nbsp; &nbsp; &nbsp;Given the first sentence is true, the second will be true as well.</i></p>
-<div>&nbsp; &nbsp; &nbsp;<input checked="checked" id="gm4_2" name="gm4" onchange="toggleSlider(1)" type="radio" value="1" />&nbsp;true<br />
-&nbsp; &nbsp; &nbsp;<input id="gm4_1" name="gm4" onchange="toggleSlider(1)" type="radio" value="0" />&nbsp;false</div>
-
-<hr />
-
 
 <p>Comments and feedback (This is optional. Please leave a comment if you have any questions, find issues, etc.)</p>
 <textarea class="form-control" cols="120" name="Comments" rows="5"></textarea></fieldset>
