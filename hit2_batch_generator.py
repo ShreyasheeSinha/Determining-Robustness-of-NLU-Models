@@ -26,8 +26,16 @@ def generate_hit_data(paraphrased_data):
             sent2_para_id = "sent" + str(id + 1) + "_2_para_id"
             sent1 = "sent" + str(id + 1) + "_1"
             sent2 = "sent" + str(id + 1) + "_2"
-            values[sent1_para_id] = row["s1_para_id"]
-            values[sent2_para_id] = row["s2_para_id"]
+            sent1_origin_id = row["dataset"] + "_s1_" + str(row["corpus_sent_id"])
+            sent2_origin_id = row["dataset"] + "_s2_" + str(row["corpus_sent_id"])
+            if row["s1_para_id"] == "":
+                values[sent1_para_id] = sent1_origin_id
+            else:
+                values[sent1_para_id] = row["s1_para_id"]
+            if row["s2_para_id"] == "":
+                values[sent2_para_id] = sent2_origin_id
+            else:
+                values[sent2_para_id] = row["s2_para_id"]
             values[sent1] = row["sentence1"]
             values[sent2] = row["sentence2"]
         hit_data = hit_data.append(values, ignore_index=True)
@@ -51,5 +59,6 @@ paraphrased_pairs_test = test_data[test_data["silver_label"] != ""]
 paraphrased_pairs_dev = dev_data[dev_data["silver_label"] != ""]
 paraphrased_data = pd.concat([paraphrased_pairs_dev, paraphrased_pairs_test], ignore_index=True)
 paraphrased_data = paraphrased_data.sample(frac=1.0, random_state=42, ignore_index=True)
+print(paraphrased_data.columns)
 hit_data = generate_hit_data(paraphrased_data)
 save_batches(hit_data)
