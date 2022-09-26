@@ -49,12 +49,18 @@ class RobertaTest():
                 seg_ids = seg_ids.to(self.device)
                 labels = y.to(self.device)
 
-                # prediction = model(pair_token_ids, mask_ids, seg_ids)
-                result = self.model(pair_token_ids, 
-                                        token_type_ids=seg_ids, 
-                                        attention_mask=mask_ids, 
-                                        labels=labels,
-                                        return_dict=True)
+                if "bart" not in self.model_name:
+                    result = self.model(pair_token_ids,
+                                            token_type_ids=seg_ids,
+                                            attention_mask=mask_ids,
+                                            labels=labels,
+                                            return_dict=True)
+                else:
+                    result = self.model(pair_token_ids,
+                                            decoder_input_ids=seg_ids,
+                                            attention_mask=mask_ids,
+                                            labels=labels,
+                                            return_dict=True)
             
                 loss = result.loss
                 logits = result.logits
