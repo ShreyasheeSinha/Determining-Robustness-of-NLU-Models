@@ -4,7 +4,7 @@ from torch.utils.data import Dataset, TensorDataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
 from tqdm import tqdm
 
-class RobertaDatasetLoader(Dataset):
+class TransformerDatasetLoader(Dataset):
 
     def __init__(self, data, tokenizer, label_dict=None, is_hypothesis_only=False):
         self.data = data

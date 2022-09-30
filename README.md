@@ -4,7 +4,7 @@ This file is best viewed in a Markdown reader (eg. https://jbt.github.io/markdow
 
 ## Overview
 
-This repository contains the code and data we used to test how NLP models perform when subjected to meaning preserving yet lexically different sentences for the task of sentence entailment. Currently, the repository supports training and testing a BiLSTM, CBOW and RoBERTa models.
+This repository contains the code and data we used to test how NLP models perform when subjected to meaning preserving yet lexically different sentences for the task of sentence entailment. Currently, the repository supports training and testing a BiLSTM, CBOW and transformer models.
 
 ## Setup
 
@@ -12,7 +12,7 @@ Follow these steps to setup your environment:
 
 1. [Download and install Conda](http://https://conda.io/projects/conda/en/latest/user-guide/install/index.html "Download and install Conda")
 
-2. Create a Conda environment with Python 3.6: `conda create -n <env_name> Python=3.6`
+2. Create a Conda environment with Python 3.6: `conda create -n <env_name> Python=3.9`
 
 3. Activate the Conda environment. You will need to activate the Conda environment in each terminal in which you want to use this code: `conda activate <env_name>`
 
@@ -33,12 +33,12 @@ Determining-Robustness-of-NLU-Models
   ├── dataset_loader.py
   ├── load_utils.py
   ├── model_utils.py
-  ├── roberta_dataset_loader.py
+  ├── transformer_dataset_loader.py
   └── vocab.py
 ├── paraphraser.py
 ├── README.md
-├── roberta_test.py
-├── roberta_train.py
+├── transformer_test.py
+├── transformer_train.py
 ├── test.py
 └── train.py
 ```
@@ -99,9 +99,9 @@ Sample testing commands are:
 
 `python3 test.py --save_path saved_model/cbow/ --test_path RTE_test.jsonl --model_name 3_class --model_type cbow`
 
-### Training and testing - RoBERTa
+### Training and testing - transformers
 
-To train RoBERTa-base or RoBERTa-large, you would need to use the `roberta_train.py` file. The `models/transformer.py` contains the code to load the model you wish from HuggingFace. __Currently only `roberta-base` and `roberta-large` are supported.__ The following options are available to fine-tune the models:
+To train transformer based, you would need to use the `transformer_train.py` file. The `models/transformer.py` contains the code to load the model you wish from HuggingFace. __Currently only `roberta` and `bert` family models are supported.__ The following options are available to fine-tune the models:
 
 1. `--save_path`: Path to the directory to save the model. The path is created if it does not exist. The default path is `./saved_model`.
 2. `--train_path`: Path to the file which has the training data. The default path is `./data/multinli_1.0/multinli_1.0_train.jsonl`.
@@ -114,9 +114,9 @@ To train RoBERTa-base or RoBERTa-large, you would need to use the `roberta_train
 
 Sample training commands are:
 
-`python3 roberta_train.py --batch_size 3 --val_path RTE_dev.jsonl --epochs 5 --num_classes 3 --save_path saved_model/roberta_3_class --model_name roberta-large --gradient_accumulation 8`
+`python3 transformer_train.py --batch_size 3 --val_path RTE_dev.jsonl --epochs 5 --num_classes 3 --save_path saved_model/roberta_3_class --model_name roberta-large --gradient_accumulation 8`
 
-To test the trained model, you would need to use the `roberta_test.py` file. The following options are available to test the models:
+To test the trained model, you would need to use the `transformer_test.py` file. The following options are available to test the models:
 
 1. `--test_path`: Path to the file which has the testing data. The default path is `./data/multinli_1.0/multinli_1.0_dev_mismatched.jsonl`.
 2. `--batch_size`: The batch size for the model. Default value is 32.
@@ -124,4 +124,4 @@ To test the trained model, you would need to use the `roberta_test.py` file. The
 
 Sample testing commands are:
 
-`python3 roberta_test.py --model_name saved_model/roberta-large`
+`python3 transformer_test.py --model_name saved_model/roberta-large`

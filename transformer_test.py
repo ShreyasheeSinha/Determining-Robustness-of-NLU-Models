@@ -1,4 +1,4 @@
-from util.roberta_dataset_loader import RobertaDatasetLoader
+from util.transformer_dataset_loader import TransformerDatasetLoader
 from models.transformer import Transformer
 import numpy as np
 import torch
@@ -9,7 +9,7 @@ import argparse
 import util.load_utils as load_utils
 from sklearn.metrics import precision_score, recall_score, f1_score
 
-class RobertaTest():
+class TransformerTest():
 
     def __init__(self, options):
         self.model_name = options['model_name']
@@ -91,7 +91,7 @@ class RobertaTest():
 
         test_df = load_utils.load_data(self.test_path)
         test_df['gold_label'] = test_df['gold_label'].astype(int)
-        dataset = RobertaDatasetLoader(test_df, self.tokenizer, is_hypothesis_only=self.is_hypothesis_only)
+        dataset = TransformerDatasetLoader(test_df, self.tokenizer, is_hypothesis_only=self.is_hypothesis_only)
         data_loader = dataset.get_data_loaders(self.batch_size)
 
         test_acc, test_precision, test_recall, test_f1, test_loss = self.test(data_loader)
@@ -127,5 +127,5 @@ if __name__ == '__main__':
     options['is_hypothesis_only'] = args.is_hypothesis_only
     print(options)
 
-    roberta_tester = RobertaTest(options)
-    roberta_tester.execute()
+    tester = TransformerTest(options)
+    tester.execute()

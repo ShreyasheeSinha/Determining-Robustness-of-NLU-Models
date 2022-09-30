@@ -1,4 +1,4 @@
-from util.roberta_dataset_loader import RobertaDatasetLoader
+from util.transformer_dataset_loader import TransformerDatasetLoader
 from models.transformer import Transformer
 import numpy as np
 import torch
@@ -10,7 +10,7 @@ from transformers import AdamW, get_linear_schedule_with_warmup
 import util.load_utils as load_utils
 import os
 
-class RobertaTrain():
+class TransformerTrain():
 
     def __init__(self, options):
         self.model_name = options['model_name']
@@ -151,12 +151,12 @@ class RobertaTrain():
             label_dict = {'entailment': 1, 'non-entailment': 0}
         else:
             label_dict = {'entailment': 2, 'contradiction': 0, 'neutral': 1}
-        train_dataset = RobertaDatasetLoader(train_df, self.tokenizer, label_dict=label_dict, is_hypothesis_only=self.is_hypothesis_only)
+        train_dataset = TransformerDatasetLoader(train_df, self.tokenizer, label_dict=label_dict, is_hypothesis_only=self.is_hypothesis_only)
         self.train_data_loader = train_dataset.get_data_loaders(self.batch_size)
 
         val_df = load_utils.load_data(self.val_path)
         val_df['gold_label'] = val_df['gold_label'].astype(int)
-        val_dataset = RobertaDatasetLoader(val_df, self.tokenizer, is_hypothesis_only=self.is_hypothesis_only) # Validation is on RTE, hence there are 2 classes
+        val_dataset = TransformerDatasetLoader(val_df, self.tokenizer, is_hypothesis_only=self.is_hypothesis_only) # Validation is on RTE, hence there are 2 classes
         self.val_data_loader = val_dataset.get_data_loaders(self.batch_size)
 
         optimizer = AdamW(self.model.parameters(),
@@ -228,5 +228,5 @@ if __name__ == '__main__':
     options['is_hypothesis_only'] = args.is_hypothesis_only
     print(options)
 
-    roberta_trainer = RobertaTrain(options)
-    roberta_trainer.execute()
+    trainer = TransformerTrain(options)
+    trainer.execute()
