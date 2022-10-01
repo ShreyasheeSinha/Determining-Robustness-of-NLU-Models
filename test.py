@@ -11,6 +11,7 @@ import numpy as np
 import argparse
 import string
 from sklearn.metrics import precision_score, recall_score, f1_score
+import os
 
 class Tester:
 
@@ -27,7 +28,9 @@ class Tester:
         self.stacked_layers = options['stacked_layers']
         self.num_classes = options['num_classes']
         self.is_hypothesis_only = options['is_hypothesis_only']
+        self.predictions_save_path = options['predictions_save_path']
         self.vocab = model_utils.load_vocab(self.save_path, self.model_name)
+        self.val_df = load_utils.load_data(self.test_path)
 
     def labels_to_indices(self, labels):
         label_dict = {'entailment': 2, 'contradiction': 0, 'neutral': 1}
@@ -85,17 +88,16 @@ class Tester:
         return premise_indices, premise_masks, hypothesis_indices, hypothesis_masks
 
     def create_test_data(self):
-        val_df = load_utils.load_data(self.test_path)
-        val_df = val_df[val_df['gold_label'] != '-']
-        premises = val_df['sentence1'].to_list()
-        hypotheses = val_df['sentence2'].to_list()
-        label_int = val_df['gold_label'].astype(int) # Convert boolean columns to int, True: 1 and False: 0
+        self.val_df = self.val_df[self.val_df['gold_label'] != '-']
+        premises = self.val_df['sentence1'].to_list()
+        hypotheses = self.val_df['sentence2'].to_list()
+        label_int = self.val_df['gold_label'].astype(int) # Convert boolean columns to int, True: 1 and False: 0
+        index_list = self.val_df.index.values.tolist()
         label_indices = label_int.to_list()
 
         premise_indices, premise_masks, hypothesis_indices, hypothesis_masks = self.convert_to_indices(premises, hypotheses)
-        # label_indices = self.labels_to_indices(labels)
 
-        test_data = DataSetLoader(np.array(premise_indices), np.array(premise_masks), np.array(hypothesis_indices), np.array(hypothesis_masks), np.array(label_indices), is_hypothesis_only=self.is_hypothesis_only)
+        test_data = DataSetLoader(np.array(premise_indices), np.array(premise_masks), np.array(hypothesis_indices), np.array(hypothesis_masks), np.array(label_indices), is_hypothesis_only=self.is_hypothesis_only, dataframe_index=np.array(index_list))
 
         test_loader = torch.utils.data.DataLoader(test_data, batch_size=self.batch_size)
 
@@ -128,6 +130,13 @@ class Tester:
             f1 = f1_score(labels.to('cpu').numpy(), predictions.to('cpu').numpy(), zero_division=0)
         return acc, precision, recall, f1
 
+    def append_predictions(self, indexes, predictions):
+        predictions = torch.log_softmax(predictions, dim=1).argmax(dim=1)
+        if self.num_classes == 3:
+            predictions = torch.where(predictions <= 1, 0, 1) # Collapse neutral and contradiction into a single class 0, entailment becomes class 1
+        for index, pred in zip(indexes, predictions):
+            self.val_df.loc[index.item(), "prediction"] = int(pred)
+
     def test(self, test_data, model, criterion):
         model.eval()
         total_test_acc  = 0
@@ -137,7 +146,7 @@ class Tester:
         total_test_loss = 0
         with torch.no_grad():
             for batch in tqdm(test_data):
-                premises, premise_mask, hypotheses, hypothesis_mask, labels = batch
+                premises, premise_mask, hypotheses, hypothesis_mask, dataframe_indexes, labels = batch
                 if not self.is_hypothesis_only:
                     premises = premises.to(self.device)
                 hypotheses = hypotheses.to(self.device)
@@ -148,6 +157,7 @@ class Tester:
 
                 loss = criterion(predictions, labels)
                 acc, precision, recall, f1  = self.multi_acc(predictions, labels)
+                self.append_predictions(dataframe_indexes, predictions)
 
                 total_test_loss += loss.item()
                 total_test_acc  += acc.item()
@@ -174,6 +184,14 @@ class Tester:
         model.load_state_dict(model_info['model_state_dict'])
 
         test_acc, test_precision, test_recall, test_f1, test_loss = self.test(test_data, model, criterion)
+        if self.predictions_save_path:
+            self.val_df['gold_label'] = self.val_df['gold_label'].astype(int)
+            self.val_df['prediction'] = self.val_df['prediction'].astype(int)
+            if not os.path.exists(self.predictions_save_path):
+                os.makedirs(os.path.dirname(self.predictions_save_path), exist_ok=True)
+                print ("Created a path: %s"%(self.predictions_save_path))
+            self.val_df.to_csv(self.predictions_save_path)
+
         print(f'test_acc: {test_acc:.4f} test_precision: {test_precision:.4f} test_recall: {test_recall:.4f} test_f1: {test_f1:.4f}')
 
         print("Testing complete!")
@@ -181,6 +199,7 @@ class Tester:
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--predictions_save_path", help="Path to save the predictions")
     parser.add_argument("--model_type", help="The model type you wish to use", choices=["bilstm", "cbow"], default="bilstm")
     parser.add_argument("--save_path", help="Directory to save model and model checkpoints into", default="./saved_model")
     parser.add_argument("--test_path", help="Path to the test dataset jsonl file", default="./data/multinli_1.0/multinli_1.0_dev_mismatched.jsonl")
@@ -214,6 +233,7 @@ if __name__ == '__main__':
     options['test_path'] = args.test_path
     options['batch_size'] = args.batch_size
     options['save_path'] = save_path
+    options['predictions_save_path'] = args.predictions_save_path
     if 'is_hypothesis_only' not in options:
         options['is_hypothesis_only'] = False # Added to support backward compatibility for models trained before hypo only training was added
     print(options)
