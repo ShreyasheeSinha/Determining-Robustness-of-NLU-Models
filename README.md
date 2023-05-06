@@ -4,7 +4,7 @@ This file is best viewed in a Markdown reader (eg. https://jbt.github.io/markdow
 
 ## Overview
 
-This repository contains the code and data we used to test how NLP models perform when subjected to meaning preserving yet lexically different sentences for the task of sentence entailment. Currently, the repository supports training and testing a BiLSTM, CBOW and transformer models.
+This repository contains the code and data we used to test how NLP models perform when subjected to meaning preserving yet lexically different sentences for the task of sentence entailment. Currently, the repository supports training and testing a BiLSTM, CBOW, BERT and RoBERTa models. It has support to run inference on GPT-3 using OpenAI's API. It also has support to generate paraphrases for a given entailment dataset.
 
 ## Setup
 
@@ -12,7 +12,7 @@ Follow these steps to setup your environment:
 
 1. [Download and install Conda](http://https://conda.io/projects/conda/en/latest/user-guide/install/index.html "Download and install Conda")
 
-2. Create a Conda environment with Python 3.6: `conda create -n <env_name> Python=3.9`
+2. Create a Conda environment with Python 3.6: `conda create -n <env_name> Python=3.6`
 
 3. Activate the Conda environment. You will need to activate the Conda environment in each terminal in which you want to use this code: `conda activate <env_name>`
 
