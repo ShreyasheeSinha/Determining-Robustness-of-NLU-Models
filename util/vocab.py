@@ -13,10 +13,6 @@ class Vocabulary:
         self.n_words = 1
         self.vocab_size = vocab_size
 
-    # def add_sentence(self, sentence):
-    #     for word in sentence.split(' '):
-    #         self.add_word(word)
-
     def add_word(self, word):
         if word not in self.word2index:
             self.word2index[word] = self.n_words + 1

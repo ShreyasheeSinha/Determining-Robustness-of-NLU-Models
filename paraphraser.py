@@ -16,7 +16,6 @@ class Paraphraser:
         self.save_path = options['save_path']
         self.jaccard_score = options['jaccard_score']
         self.model_name = 'Vamsi/T5_Paraphrase_Paws'
-        # self.metric = None
         self.model, self.tokenizer = self.load_paraphraser()
 
     def load_paraphraser(self):
@@ -74,22 +73,10 @@ class Paraphraser:
         for paraphrase in paraphrases:
             if paraphrase.lower() == sentence.lower():
                 continue
-            # P, R, F1 = self.metric.score([paraphrase], [sentence])
-            # bert_score = F1.item()
-            # if bert_score >= 0.7:
             jaccard_score = self.jaccard_similarity(sentence, paraphrase)
             if jaccard_score <= self.jaccard_score:
-                # TODO: Decide whether to return single or multiple phrases
                 details = {'paraphrase': paraphrase, 'jaccard_score': jaccard_score}
                 best_paraphrases.append(details)
-                    # if min_score == None or jaccard_score < min_score:
-                    #     min_score = jaccard_score
-                    #     best_paraphrase = paraphrase
-                    # else:
-                    #     print("Jaccard above 0.75:", bert_score, paraphrase, jaccard_score)
-            # else:
-            #     print("BERT below 0.7", bert_score, paraphrase)
-        # print("Best paraphrase:", best_paraphrase, min_score)
         return best_paraphrases
 
     def generate_paraphrase(self, sentence):
@@ -118,9 +105,6 @@ class Paraphraser:
     def execute(self):
         data = self.load_data()
         self.get_sentence_counts(data)
-        # idf_sents = data['sentence1'].to_list()
-        # idf_sents.extend(data['sentence2'].to_list())
-        # self.metric = BERTScorer(lang="en", rescale_with_baseline=True, idf=True, idf_sents=idf_sents)
         data['sentence1dash'] = data['sentence1'].progress_apply(self.generate_paraphrase)
         data['sentence2dash'] = data['sentence2'].progress_apply(self.generate_paraphrase)
         self.get_paraphrases_counts(data)

@@ -44,25 +44,16 @@ class TransformerTrain():
         data_loader = self.train_data_loader
 
         for batch_idx, (pair_token_ids, mask_ids, seg_ids, y) in enumerate(tqdm(data_loader)):
-            # optimizer.zero_grad()
             pair_token_ids = pair_token_ids.to(self.device)
             mask_ids = mask_ids.to(self.device)
             seg_ids = seg_ids.to(self.device)
             labels = y.to(self.device)
 
-            # prediction = model(pair_token_ids, mask_ids, seg_ids)
-            if "bart" not in self.model_name:
-                result = self.model(pair_token_ids,
-                                        token_type_ids=seg_ids,
-                                        attention_mask=mask_ids,
-                                        labels=labels,
-                                        return_dict=True)
-            else:
-                result = self.model(pair_token_ids, 
-                                        decoder_input_ids=seg_ids, 
-                                        attention_mask=mask_ids, 
-                                        labels=labels,
-                                        return_dict=True)
+            result = self.model(pair_token_ids, 
+                                    decoder_input_ids=seg_ids, 
+                                    attention_mask=mask_ids, 
+                                    labels=labels,
+                                    return_dict=True)
             
             loss = result.loss
             if self.gradient_accumulation > 0:
@@ -104,25 +95,16 @@ class TransformerTrain():
 
         with torch.no_grad():
             for (pair_token_ids, mask_ids, seg_ids, y) in tqdm(data_loader):
-                # optimizer.zero_grad()
                 pair_token_ids = pair_token_ids.to(self.device)
                 mask_ids = mask_ids.to(self.device)
                 seg_ids = seg_ids.to(self.device)
                 labels = y.to(self.device)
 
-                # prediction = model(pair_token_ids, mask_ids, seg_ids)
-                if "bart" not in self.model_name:
-                    result = self.model(pair_token_ids,
-                                            token_type_ids=seg_ids,
-                                            attention_mask=mask_ids,
-                                            labels=labels,
-                                            return_dict=True)
-                else:
-                    result = self.model(pair_token_ids,
-                                            decoder_input_ids=seg_ids,
-                                            attention_mask=mask_ids,
-                                            labels=labels,
-                                            return_dict=True)
+                result = self.model(pair_token_ids,
+                                        decoder_input_ids=seg_ids,
+                                        attention_mask=mask_ids,
+                                        labels=labels,
+                                        return_dict=True)
             
                 loss = result.loss
                 logits = result.logits

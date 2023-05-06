@@ -1,5 +1,9 @@
-numpy==1.19.5
-pandas==1.1.5
-torch==1.9.0
-tqdm==4.62.2
-transformers==4.5.1
+matplotlib==3.6.3
+numpy==1.23.3
+openai==0.27.4
+pandas==1.5.0
+scikit_learn==1.1.2
+seaborn==0.12.2
+torch==1.12.0+cu116
+tqdm==4.64.1
+transformers==4.26.1

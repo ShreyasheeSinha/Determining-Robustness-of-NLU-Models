@@ -53,35 +53,23 @@ class TransformerTest():
 
         with torch.no_grad():
             for (pair_token_ids, mask_ids, seg_ids, indexes, y) in tqdm(data_loader):
-                # optimizer.zero_grad()
                 pair_token_ids = pair_token_ids.to(self.device)
                 mask_ids = mask_ids.to(self.device)
                 seg_ids = seg_ids.to(self.device)
                 labels = y.to(self.device)
-
-                if "bart" not in self.model_name:
-                    result = self.model(pair_token_ids,
-                                            token_type_ids=seg_ids,
-                                            attention_mask=mask_ids,
-                                            labels=labels,
-                                            return_dict=True)
-                else:
-                    result = self.model(pair_token_ids,
-                                            decoder_input_ids=seg_ids,
-                                            attention_mask=mask_ids,
-                                            labels=labels,
-                                            return_dict=True)
+                result = self.model(pair_token_ids,
+                                        decoder_input_ids=seg_ids,
+                                        attention_mask=mask_ids,
+                                        labels=labels,
+                                        return_dict=True)
             
                 loss = result.loss
                 logits = result.logits
-                # print(logits.shape)
                 logits = logits.detach().cpu().numpy()
                 label_ids = labels.to('cpu').numpy()
-                    
-                    # loss = criterion(prediction, labels)
+
                 acc, precision, recall, f1 = self.flat_accuracy(logits, label_ids)
                 self.append_predictions(test_df, indexes, logits)
-                # print(acc, loss)
 
                 total_loss += loss.item()
                 total_acc  += acc
@@ -136,7 +124,6 @@ if __name__ == '__main__':
     args = parse_args()
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    # create_path(args.predictions_save_path)
     print(device)
 
     options = {}
