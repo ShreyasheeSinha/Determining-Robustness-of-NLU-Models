@@ -75,6 +75,7 @@ To train the BiLSTM and CBOW models, you would need to use the `train.py` file. 
 11. `--seq_len`: The maximum sequence length allowed. The default value is 50.
 12. `--vocab_size`: The vocab size to be used for the model. The default value is 50,000.
 13. `--num_classes`: The number of training classes. This repo involves training on the MNLI dataset with 3 classes - entailment, neutral and contradiction -  and validating/testing on the RTE dataset with two classes - entailment, non-entailment. This parameters specifies the number of training classes present in your training data. The default value is 2.
+14. `--is_hypothesis_only`: Specifies if the model to be trained on the hypothesis only.
 
 Sample training commands are:
 
@@ -92,6 +93,7 @@ To test the BiLSTM and CBOW models, you would need to use the `test.py` file. Th
 4. `--batch_size`: The batch size for the model. Default value is 32.
 5. `--emb_path`: Path to the GloVe embeddings. Default path is `/data/glove.840B.300d.txt`.
 6. `--model_name`: The suffix given to your model. This will be appended to the `model_type` to help find the name of the saved model. __This parameter is required.__
+7. `--predictions_save_path`: The file where the model predictions will be saved.
 
 Sample testing commands are:
 
@@ -111,6 +113,7 @@ To train transformer based, you would need to use the `transformer_train.py` fil
 6. `--gradient_accumulation`: Number of batches to accumulate gradients. This was added to support simulation of large batches in the case the training GPU does not have a large memory. The default value is 0.
 7. `--model_name`: The name or path to the directory of the model you wish to train. The default value is `roberta-base`.
 8. `--num_classes`: The number of training classes. This repo involves training on the MNLI dataset with 3 classes - entailment, neutral and contradiction -  and validating/testing on the RTE dataset with two classes - entailment, non-entailment. This parameters specifies the number of training classes present in your training data. The default value is 2.
+9. `--is_hypothesis_only`: Specifies if the model to be trained on the hypothesis only.
 
 Sample training commands are:
 
@@ -121,6 +124,8 @@ To test the trained model, you would need to use the `transformer_test.py` file.
 1. `--test_path`: Path to the file which has the testing data. The default path is `./data/multinli_1.0/multinli_1.0_dev_mismatched.jsonl`.
 2. `--batch_size`: The batch size for the model. Default value is 32.
 3. `--model_name`: The name or path to the directory of the model you wish to test. The default value is `roberta-large-mnli`.
+4. `--is_hypothesis_only`: Specifies if the model to be tested on the hypothesis only.
+5. `--predictions_save_path`: The file where the model predictions will be saved.
 
 Sample testing commands are:
 
